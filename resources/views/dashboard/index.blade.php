@@ -147,20 +147,6 @@
             @endif
         </section>
 
-        <section class="dashboard-card dashboard-breed-card" aria-labelledby="breed-title">
-            <a class="dashboard-breed-image-link" href="https://commons.wikimedia.org/wiki/File:Meio-sangue.jpg" target="_blank" rel="noopener noreferrer">
-                <img src="{{ asset('images/girolando-half-blood.jpg') }}" alt="Vaca Girolando medio sangre en una finca de Brasil" loading="lazy">
-                <span>Ver imagen original ↗</span>
-            </a>
-            <div class="dashboard-breed-content">
-                <span class="dashboard-breed-tag">RAZA DESTACADA</span>
-                <h3 id="breed-title">Fuerza y leche:<br>la Girolando</h3>
-                <p>Un cruce que combina la producción lechera Holstein con la rusticidad y adaptación al trópico del Gir.</p>
-                <div class="dashboard-breed-facts"><span><strong>5/8</strong> Holstein</span><span><strong>3/8</strong> Gir</span></div>
-                <a class="dashboard-card-link" href="https://commons.wikimedia.org/wiki/File:Meio-sangue.jpg" target="_blank" rel="noopener noreferrer">Foto: teliocampos · Wikimedia Commons · Dominio público ↗</a>
-            </div>
-        </section>
-
         <section class="dashboard-card dashboard-production-card" aria-labelledby="top-milk-title">
             <div class="dashboard-card-heading">
                 <div><span class="dashboard-card-icon dashboard-card-icon-blue">✦</span><div><h3 id="top-milk-title">Vacas destacadas</h3><p>Mayor producción en los últimos 30 días</p></div></div>
