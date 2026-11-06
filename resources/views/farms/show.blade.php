@@ -1,0 +1,80 @@
+@extends('layouts.app')
+
+@section('title', $farm->name)
+
+@section('content')
+    <div class="page-head">
+        <div>
+            <div class="eyebrow"><a href="{{ route('farms.index') }}">Fincas</a> / {{ $farm->code }}</div>
+            <h1>{{ $farm->name }}</h1>
+            <p class="page-subtitle">{{ $farm->code }} · {{ $farm->municipality ?: 'Ubicación no especificada' }}{{ $farm->province ? ', ' . $farm->province : '' }}</p>
+        </div>
+        <div class="detail-actions">
+            <a class="button button-secondary" href="{{ route('paddocks.index', ['farm_id' => $farm->id]) }}">Ver potreros</a>
+            <a class="button button-secondary" href="{{ route('paddocks.create', ['farm_id' => $farm->id]) }}">Agregar potrero</a>
+            <a class="button button-secondary" href="{{ route('farms.edit', $farm) }}">Editar finca</a>
+            <form method="POST" action="{{ route('farms.destroy', $farm) }}" data-confirm="Archivar esta finca? Solo se pueden archivar fincas sin animales asociados.">
+                @csrf
+                @method('DELETE')
+                <button class="button button-danger" type="submit">Archivar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="farm-detail-grid">
+        <section class="detail-panel">
+            <div class="detail-title">
+                <div><h2>Datos de la finca</h2><p>Ubicación y datos de contacto.</p></div>
+                <span class="tag {{ $farm->status === 'active' ? 'tag-active' : 'tag-muted' }}">{{ \App\Models\Farm::STATUSES[$farm->status] }}</span>
+            </div>
+            <dl class="detail-list">
+                <div class="detail-item"><dt>Extensión</dt><dd>{{ $farm->area_hectares ? number_format((float) $farm->area_hectares, 2, ',', '.') . ' ha' : 'No especificada' }}</dd></div>
+                <div class="detail-item"><dt>Animales asignados</dt><dd>{{ number_format($farm->animals_count) }}</dd></div>
+                <div class="detail-item"><dt>Dirección</dt><dd>{{ $farm->address ?: 'No especificada' }}</dd></div>
+                <div class="detail-item"><dt>Encargado</dt><dd>{{ $farm->manager_name ?: 'Sin asignar' }}</dd></div>
+                <div class="detail-item"><dt>Teléfono</dt><dd>{{ $farm->phone ?: 'No registrado' }}</dd></div>
+                <div class="detail-item"><dt>Correo</dt><dd>{{ $farm->email ?: 'No registrado' }}</dd></div>
+                @if ($farm->notes)
+                    <div class="detail-item farm-notes"><dt>Notas</dt><dd>{{ $farm->notes }}</dd></div>
+                @endif
+            </dl>
+        </section>
+    </div>
+
+    <div class="section-heading farm-animals-heading">
+        <div>
+            <h2>Animales en esta finca</h2>
+            <p>Inventario asociado a {{ $farm->name }}.</p>
+        </div>
+        <a class="button button-secondary" href="{{ route('animals.create', ['farm_id' => $farm->id]) }}">Registrar animal aquí</a>
+    </div>
+    <section class="table-wrap" aria-label="Animales de la finca">
+        @if ($animals->isEmpty())
+            <div class="empty-state">
+                <strong>No hay animales asignados.</strong>
+                Registra un animal o asígnalo a esta finca desde su ficha.
+            </div>
+        @else
+            <table class="data-table">
+                <thead>
+                    <tr><th>Identificación</th><th>Especie / raza</th><th>Sexo</th><th>Potrero / corral</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($animals as $animal)
+                        <tr>
+                            <td><a class="animal-link" href="{{ route('animals.show', $animal) }}">{{ $animal->ear_tag }}</a><span class="animal-sub">{{ $animal->name ?: 'Sin nombre' }}</span></td>
+                            <td>{{ \App\Models\Animal::SPECIES[$animal->species] ?? 'Otro' }}<span class="animal-sub">{{ $animal->breed?->name ?? 'Raza sin especificar' }}</span></td>
+                            <td>{{ ['female' => 'Hembra', 'male' => 'Macho', 'unknown' => 'Sin definir'][$animal->sex] ?? 'Sin definir' }}</td>
+                            <td>{{ $animal->paddock?->name ?? ($animal->location ?: 'Sin asignar') }}</td>
+                            <td><span class="tag {{ $animal->status === 'active' ? 'tag-active' : 'tag-muted' }}">{{ \App\Models\Animal::STATUSES[$animal->status] ?? $animal->status }}</span></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <div class="pagination">
+                <span>Mostrando {{ $animals->firstItem() }}–{{ $animals->lastItem() }} de {{ $animals->total() }}</span>
+                {{ $animals->onEachSide(1)->links() }}
+            </div>
+        @endif
+    </section>
+@endsection
