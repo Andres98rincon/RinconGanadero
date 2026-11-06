@@ -1,26 +1,365 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#183d32">
+    <meta name="description" content="Rincón Ganadero - Estado de conexión">
+
     <title>Sin conexión | Rincón Ganadero</title>
+
     <style>
-        * { box-sizing: border-box; }
-        body { min-height: 100vh; display: grid; margin: 0; place-items: center; padding: 24px; background: #f3f5f0; color: #202c27; font-family: system-ui, sans-serif; }
-        main { width: min(100%, 440px); padding: 36px; border: 1px solid #e2e8e2; border-radius: 12px; background: #fff; text-align: center; }
-        img { width: 76px; height: 76px; margin-bottom: 18px; border-radius: 16px; }
-        h1 { margin: 0 0 10px; color: #183d32; font-size: 24px; }
-        p { margin: 0; color: #748078; font-size: 14px; line-height: 1.65; }
-        a { display: inline-flex; min-height: 42px; align-items: center; margin-top: 24px; padding: 0 16px; border-radius: 5px; background: #183d32; color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; }
+        :root {
+            --primary: #183d32;
+            --primary-light: #245744;
+            --accent: #b5d58b;
+            --background: #f3f6f1;
+            --text: #24352d;
+            --muted: #78877e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            font-family: Inter, system-ui, -apple-system, sans-serif;
+            background:
+                radial-gradient(circle at 15% 15%, #dce9d7 0, transparent 35%),
+                radial-gradient(circle at 85% 85%, #dce9d7 0, transparent 35%),
+                var(--background);
+            color: var(--text);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .brand img {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+        }
+
+        .brand-name {
+            text-align: left;
+        }
+
+        .brand-name strong {
+            display: block;
+            font-size: 19px;
+            color: var(--primary);
+            letter-spacing: -.5px;
+        }
+
+        .brand-name span {
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .card {
+            position: relative;
+            overflow: hidden;
+            padding: 42px 32px 34px;
+            background: rgba(255,255,255,.95);
+            border: 1px solid #e4ebe1;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(24,61,50,.09);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #183d32, #8bbd73);
+        }
+
+        .illustration {
+            width: 126px;
+            height: 126px;
+            margin: 0 auto 25px;
+            display: grid;
+            place-items: center;
+            position: relative;
+            border-radius: 50%;
+            background: #edf4e9;
+        }
+
+        .illustration::before {
+            content: "";
+            position: absolute;
+            inset: 10px;
+            border: 1px dashed #b7cdb0;
+            border-radius: 50%;
+        }
+
+        .illustration svg {
+            width: 68px;
+            height: 68px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 12px;
+            margin-bottom: 17px;
+            background: #fff2e8;
+            border: 1px solid #f6dfcc;
+            border-radius: 30px;
+            color: #a45c30;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: #dc864b;
+            border-radius: 50%;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: clamp(25px, 6vw, 31px);
+            line-height: 1.2;
+            letter-spacing: -1px;
+            margin-bottom: 13px;
+        }
+
+        .description {
+            max-width: 340px;
+            margin: 0 auto;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .info {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 27px;
+            padding: 16px;
+            text-align: left;
+            border-radius: 12px;
+            background: #f4f7f2;
+        }
+
+        .info-icon {
+            flex-shrink: 0;
+            color: var(--primary-light);
+            font-size: 19px;
+        }
+
+        .info strong {
+            display: block;
+            color: var(--primary);
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .info p {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .retry {
+            width: 100%;
+            min-height: 49px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            border: none;
+            border-radius: 10px;
+            background: var(--primary);
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .retry:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(24,61,50,.18);
+        }
+
+        .retry:disabled {
+            opacity: .7;
+            cursor: wait;
+            transform: none;
+        }
+
+        .retry svg {
+            width: 17px;
+            height: 17px;
+        }
+
+        .footer {
+            margin-top: 25px;
+            color: #98a39b;
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .footer strong {
+            color: var(--primary);
+        }
+
+        @media (max-width: 400px) {
+            .card {
+                padding: 35px 22px 27px;
+            }
+
+            .illustration {
+                width: 110px;
+                height: 110px;
+            }
+        }
     </style>
 </head>
+
 <body>
-    <main>
-        <img src="./images/rincon-ganadero.png" alt="Logo de Rincón Ganadero">
-        <h1>Estás sin conexión</h1>
-        <p>Por seguridad, la información de tu cuenta y de la finca no está disponible sin conexión. Comprueba tu conexión e inténtalo de nuevo.</p>
-        <a href="./">Volver a intentar</a>
+
+    <main class="container">
+
+        <div class="brand">
+            <img src="./images/rincon-ganadero.png"
+                 alt="Rincón Ganadero">
+            <div class="brand-name">
+                <strong>Rincón Ganadero</strong>
+                <span>Gestión ganadera</span>
+            </div>
+        </div>
+
+        <section class="card">
+
+            <div class="illustration">
+                <svg viewBox="0 0 64 64" fill="none"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 25L7 19M51 25L57 19"
+                          stroke="#183d32" stroke-width="3"
+                          stroke-linecap="round"/>
+                    <path d="M19 46C12 40 13 27 19 20C25 13 39 13 45 20C51 27 52 40 45 46"
+                          stroke="#183d32" stroke-width="3"
+                          stroke-linecap="round"/>
+                    <path d="M25 34H27M37 34H39"
+                          stroke="#183d32" stroke-width="3"
+                          stroke-linecap="round"/>
+                    <path d="M26 43C29 46 35 46 38 43"
+                          stroke="#183d32" stroke-width="3"
+                          stroke-linecap="round"/>
+                    <path d="M32 8V13"
+                          stroke="#86AE72" stroke-width="3"
+                          stroke-linecap="round"/>
+                    <path d="M8 53L56 5"
+                          stroke="#D78B53" stroke-width="3.5"
+                          stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            <div class="status">
+                <span class="status-dot"></span>
+                Sin conexión a Internet
+            </div>
+
+            <h1>¡Ups! Parece que estás desconectado</h1>
+
+            <p class="description">
+                No hemos podido establecer conexión con nuestros servidores.
+                Verifica tu conexión a Internet para continuar utilizando
+                Rincón Ganadero.
+            </p>
+
+            <div class="info">
+                <span class="info-icon">ⓘ</span>
+                <div>
+                    <strong>Tu información es importante</strong>
+                    <p>
+                        En este momento no podemos consultar ni actualizar
+                        la información de tu cuenta y tus fincas.
+                        Cuando recuperes la conexión podrás intentarlo nuevamente.
+                    </p>
+                </div>
+            </div>
+
+            <button class="retry" id="retryButton" onclick="retryConnection()">
+                <svg viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 7v5h-5"/>
+                    <path d="M4 17v-5h5"/>
+                    <path d="M5.6 9a7 7 0 0 1 11.5-2L20 12"/>
+                    <path d="M18.4 15a7 7 0 0 1-11.5 2L4 12"/>
+                </svg>
+                <span id="retryText">Reintentar conexión</span>
+            </button>
+
+        </section>
+
+        <footer class="footer">
+            <strong>Rincón Ganadero</strong><br>
+            Tecnología al servicio del campo.<br>
+            © <span id="year"></span> Todos los derechos reservados.
+        </footer>
+
     </main>
+
+    <script>
+        document.getElementById('year').textContent =
+            new Date().getFullYear();
+
+        function retryConnection() {
+            const button = document.getElementById('retryButton');
+            const text = document.getElementById('retryText');
+
+            if (!navigator.onLine) {
+                text.textContent = 'Sigues sin conexión...';
+                setTimeout(() => {
+                    text.textContent = 'Reintentar conexión';
+                }, 1800);
+                return;
+            }
+
+            button.disabled = true;
+            text.textContent = 'Verificando conexión...';
+
+            window.location.href = './';
+        }
+    </script>
+
 </body>
 </html>

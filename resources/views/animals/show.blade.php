@@ -9,7 +9,9 @@
             <h1>{{ $animal->name ?: $animal->ear_tag }}</h1>
             <p class="page-subtitle">Identificación {{ $animal->ear_tag }} · {{ \App\Models\Animal::SPECIES[$animal->species] ?? 'Otro' }} · {{ $animal->breed?->name ?? 'Raza sin especificar' }}</p>
         </div>
-        <div class="detail-actions">
+
+    </div>
+     <div class="detail-actions">
             @if ($animal->status === 'active')
                 <a class="button button-secondary" href="{{ route('animal-movements.create', ['animal_id' => $animal->id, 'movement_type' => 'sale']) }}">Registrar venta o traslado</a>
             @endif
@@ -22,8 +24,8 @@
                 <button class="button button-danger" type="submit">Retirar</button>
             </form>
         </div>
-    </div>
 
+        <br>
     <div class="detail-grid">
         <section class="detail-panel">
             @if ($animal->hasMedia('photo'))
@@ -158,9 +160,9 @@
             @endforelse
         </section>
     @endif
-
+        <br>
     <section class="table-wrap" aria-label="Historial de compras, ventas y traslados">
-        <div class="farm-animals-heading">
+        <div class="farm-animals-heading p-4">
             <div><h2>Historial de compras, ventas y traslados</h2><p>Los movimientos conservan el precio, motivo y ubicación registrada en cada fecha.</p></div>
         </div>
         @if ($movements->isEmpty())

@@ -13,7 +13,7 @@
         </div>
     </div>
 
-    <form class="form-layout" method="POST" action="{{ $isEditing ? route('admin.users.update', $managedUser) : route('admin.users.store') }}" @unless($isEditing) data-user-creation @endunless data-password-set="{{ filled($managedUser?->password) ? 'true' : 'false' }}" data-google-linked="{{ filled($managedUser?->google_id) ? 'true' : 'false' }}">
+    <form class="form-layout"    method="POST" action="{{ $isEditing ? route('admin.users.update', $managedUser) : route('admin.users.store') }}" @unless($isEditing) data-user-creation @endunless data-password-set="{{ filled($managedUser?->password) ? 'true' : 'false' }}" data-google-linked="{{ filled($managedUser?->google_id) ? 'true' : 'false' }}">
         @csrf
         @if ($isEditing)
             @method('PUT')
@@ -95,7 +95,8 @@
             @endif
 
             @if (! $isEditing || ! auth()->user()->is($managedUser))
-                <div class="section-heading">
+            <br>
+            <div class="section-heading">
                     <h2>Fincas asignadas</h2>
                     <p>Este usuario solo podrá consultar y gestionar información de las fincas seleccionadas.</p>
                 </div>
@@ -117,15 +118,7 @@
                 <a class="button button-secondary" href="{{ route('admin.users.index') }}">Cancelar</a>
                 <button class="button button-primary" type="submit">{{ $isEditing ? 'Guardar usuario' : 'Crear cuenta' }}</button>
             </div>
+            <br>
         </section>
-        <aside class="side-panel">
-            <h3>Acceso protegido</h3>
-            <p>No existe registro público. Las cuentas solo pueden crearse desde esta sección por personal autorizado.</p>
-            <ul>
-                <li>El usuario recibirá sus credenciales de forma privada.</li>
-                <li>Puede recuperar su contraseña desde la pantalla de inicio.</li>
-                <li>El superadministrador se crea únicamente por consola.</li>
-            </ul>
-        </aside>
     </form>
 @endsection
