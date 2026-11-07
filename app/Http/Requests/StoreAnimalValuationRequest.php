@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
+use App\AccessControl;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAnimalValuationRequest extends FormRequest
@@ -20,8 +21,15 @@ class StoreAnimalValuationRequest extends FormRequest
                 'integer',
                 Rule::exists('animals', 'id')->where(fn ($query) => $query
                     ->where('status', 'active')
-                    ->whereNull('deleted_at')),
+                    ->whereNull('deleted_at')
+                    ->when(! $this->user()->hasRole(AccessControl::SUPER_ADMIN_ROLE), fn ($query) => $query
+                        ->whereIn('farm_id', $this->user()->accessibleFarmIdsQuery()))
+                    ->when($this->filled('farm_id'), fn ($query) => $query->where('farm_id', $this->input('farm_id')))),
             ],
+            'farm_id' => ['nullable', 'integer', Rule::exists('farms', 'id')->where(fn ($query) => $query
+                ->whereNull('deleted_at')
+                ->when(! $this->user()->hasRole(AccessControl::SUPER_ADMIN_ROLE), fn ($query) => $query
+                    ->whereIn('id', $this->user()->accessibleFarmIdsQuery())))],
             'valuation_date' => ['required', 'date', 'before_or_equal:today'],
             'amount' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'notes' => ['nullable', 'string', 'max:10000'],

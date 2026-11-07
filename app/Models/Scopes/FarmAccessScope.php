@@ -7,6 +7,7 @@ use App\Models\Animal;
 use App\Models\AnimalMovement;
 use App\Models\AnimalEvent;
 use App\Models\AnimalValuation;
+use App\Models\CalendarReminder;
 use App\Models\Farm;
 use App\Models\FinancialTransaction;
 use App\Models\MilkProductionRecord;
@@ -37,6 +38,12 @@ class FarmAccessScope implements Scope
         }
 
         if ($model instanceof Animal || $model instanceof Paddock) {
+            $builder->whereIn($model->qualifyColumn('farm_id'), clone $farmIds);
+
+            return;
+        }
+
+        if ($model instanceof CalendarReminder) {
             $builder->whereIn($model->qualifyColumn('farm_id'), clone $farmIds);
 
             return;

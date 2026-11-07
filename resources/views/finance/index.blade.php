@@ -27,6 +27,18 @@
         Las valoraciones no se cuentan como ingresos ni como flujo de caja.
     </p>
 
+    @if (session('valuation_comparison'))
+        @php($comparison = session('valuation_comparison'))
+        <section class="valuation-comparison" aria-label="Comparación de valoración">
+            <div><span class="eyebrow">Valoración registrada</span><h2>{{ $comparison['animal_name'] }}</h2><p>Comparación con la última valoración disponible.</p></div>
+            <div class="valuation-comparison-values">
+                <div><span>Anterior{{ $comparison['previous_date'] ? ' · '.\Carbon\CarbonImmutable::parse($comparison['previous_date'])->format('d/m/Y') : '' }}</span><strong>{{ $comparison['previous_amount'] === null ? 'Sin registro' : '$'.number_format($comparison['previous_amount'], 2, ',', '.') }}</strong></div>
+                <div><span>Nuevo · {{ \Carbon\CarbonImmutable::parse($comparison['valuation_date'])->format('d/m/Y') }}</span><strong>${{ number_format($comparison['new_amount'], 2, ',', '.') }}</strong></div>
+                <div class="valuation-variation {{ ($comparison['variation'] ?? 0) >= 0 ? 'positive' : 'negative' }}"><span>Variación económica</span><strong>{{ $comparison['variation'] === null ? 'Primera valoración' : (($comparison['variation'] >= 0 ? '+' : '').'$'.number_format(abs($comparison['variation']), 2, ',', '.')) }}</strong>@if ($comparison['variation_percent'] !== null)<small>{{ $comparison['variation_percent'] >= 0 ? '+' : '' }}{{ number_format($comparison['variation_percent'], 2, ',', '.') }}%</small>@endif</div>
+            </div>
+        </section>
+    @endif
+
     <form class="filter-bar" method="GET" action="{{ route('finance.index') }}">
         <div class="field">
             <label for="from">Desde</label>
@@ -48,6 +60,15 @@
                 <option value="{{ $value }}" @selected(($filters['type'] ?? '') === $value)>{{ $label }}</option>
             @endforeach
         </select>
+        <select class="filter-control" name="category" aria-label="Filtrar por categoría">
+            <option value="">Todas las categorías</option>
+            @foreach ($categories as $type => $typeCategories)
+                @foreach ($typeCategories as $value => $label)
+                    @continue(in_array($value, \App\Models\FinancialTransaction::MOVEMENT_ONLY_CATEGORIES, true))
+                    <option value="{{ $value }}" @selected(($filters['category'] ?? '') === $value)>{{ $label }}</option>
+                @endforeach
+            @endforeach
+        </select>
         @if (! empty($filters['animal_id']))
             <input type="hidden" name="animal_id" value="{{ $filters['animal_id'] }}">
         @endif
@@ -55,6 +76,11 @@
         <button class="button button-secondary" type="submit">Filtrar</button>
         <a class="button button-secondary" href="{{ route('finance.index') }}">Limpiar</a>
     </form>
+
+    <div class="detail-actions finance-report-shortcuts">
+        <a class="button button-secondary" href="{{ route('reports.index', ['report' => 'finance', 'from' => now()->startOfMonth()->toDateString(), 'to' => today()->toDateString(), 'farm_id' => $filters['farm_id'] ?? null]) }}">Generar reporte mensual</a>
+        <a class="button button-secondary" href="{{ route('reports.index', ['report' => 'finance', 'from' => now()->startOfYear()->toDateString(), 'to' => today()->toDateString(), 'farm_id' => $filters['farm_id'] ?? null]) }}">Generar reporte anual</a>
+    </div>
 
     <div class="finance-report-grid">
         <section class="table-wrap" aria-label="Flujo de caja por fecha">
@@ -206,7 +232,7 @@
             <div class="empty-state"><strong>No hay movimientos con esos filtros.</strong>Registra un ingreso o gasto para comenzar el historial financiero.</div>
         @else
             <table class="data-table">
-                <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Categoría</th><th>Finca</th><th>Animal</th><th>Método</th><th>Monto</th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Categoría</th><th>Finca</th><th>Animal</th><th>Método</th><th>Comprobantes</th><th>Monto</th></tr></thead>
                 <tbody>
                     @foreach ($transactions as $transaction)
                         <tr>
@@ -217,6 +243,7 @@
                             <td>{{ $transaction->farm?->name ?? '—' }}</td>
                             <td>{{ $transaction->animal?->ear_tag ?? '—' }}</td>
                             <td>{{ \App\Models\FinancialTransaction::PAYMENT_METHODS[$transaction->payment_method] ?? '—' }}</td>
+                            <td>@foreach ($transaction->getMedia('receipts') as $attachment)<a class="animal-link" href="{{ route('finance.transactions.attachment', [$transaction, $attachment->id]) }}">{{ $attachment->file_name }}</a>@if (! $loop->last)<br>@endif @endforeach</td>
                             <td><strong>${{ number_format((float) $transaction->amount, 2, ',', '.') }}</strong></td>
                         </tr>
                     @endforeach

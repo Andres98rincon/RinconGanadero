@@ -183,6 +183,9 @@ class AnimalRequest extends FormRequest
         return [
             'ear_tag.required' => 'La identificación del animal es obligatoria.',
             'ear_tag.unique' => 'Esta identificación ya está registrada.',
+            'species.required' => 'Selecciona la especie del animal antes de elegir su raza.',
+            'species.in' => 'La especie seleccionada no es válida.',
+            'breed_id.exists' => 'La raza seleccionada no corresponde a la especie del animal.',
             'photo.image' => 'El archivo seleccionado debe ser una imagen válida.',
             'photo.mimes' => 'La foto debe estar en formato JPG, PNG o WEBP.',
             'photo.extensions' => 'La extensión de la foto debe ser JPG, PNG o WEBP.',

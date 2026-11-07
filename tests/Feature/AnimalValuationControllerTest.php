@@ -74,4 +74,43 @@ class AnimalValuationControllerTest extends TestCase
         ]);
         $this->assertDatabaseCount('animal_valuations', 0);
     }
+
+    public function test_new_valuation_compares_against_the_previous_value_and_create_form_shows_history(): void
+    {
+        $this->freezeTime();
+        $animal = Animal::factory()->create(['name' => 'Lucera']);
+        $animal->valuations()->create([
+            'amount' => 10000,
+            'valuation_date' => today()->subMonth()->toDateString(),
+            'notes' => 'Valor inicial',
+        ]);
+
+        $this->get(route('finance.valuations.create', ['animal_id' => $animal->id]))
+            ->assertOk()
+            ->assertSee('$10.000,00')
+            ->assertSee('Valor inicial');
+
+        $this->post(route('finance.valuations.store'), [
+            'animal_id' => $animal->id,
+            'valuation_date' => today()->toDateString(),
+            'amount' => 12500,
+        ])->assertSessionHas('valuation_comparison', function (array $comparison): bool {
+            return (float) $comparison['previous_amount'] === 10000.0
+                && (float) $comparison['new_amount'] === 12500.0
+                && (float) $comparison['variation'] === 2500.0;
+        });
+    }
+
+    public function test_valuation_form_filters_animals_by_the_selected_farm(): void
+    {
+        $firstFarm = \App\Models\Farm::factory()->create(['name' => 'Finca Norte']);
+        $secondFarm = \App\Models\Farm::factory()->create(['name' => 'Finca Sur']);
+        $firstAnimal = Animal::factory()->create(['farm_id' => $firstFarm->id, 'ear_tag' => 'NORTE-001']);
+        Animal::factory()->create(['farm_id' => $secondFarm->id, 'ear_tag' => 'SUR-001']);
+
+        $this->get(route('finance.valuations.create', ['farm_id' => $firstFarm->id, 'q' => '001']))
+            ->assertOk()
+            ->assertSee($firstAnimal->ear_tag)
+            ->assertDontSee('SUR-001');
+    }
 }

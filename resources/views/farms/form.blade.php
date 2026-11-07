@@ -51,6 +51,21 @@
                         @error('province')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="field">
+                        <label for="latitude">Latitud</label>
+                        <input class="control" id="latitude" name="latitude" type="number" step="0.0000001" min="-90" max="90" value="{{ old('latitude', $farm->latitude ?? '') }}" data-farm-latitude>
+                        @error('latitude')<span class="field-error">{{ $message }}</span>@enderror
+                    </div>
+                    <div class="field">
+                        <label for="longitude">Longitud</label>
+                        <input class="control" id="longitude" name="longitude" type="number" step="0.0000001" min="-180" max="180" value="{{ old('longitude', $farm->longitude ?? '') }}" data-farm-longitude>
+                        @error('longitude')<span class="field-error">{{ $message }}</span>@enderror
+                    </div>
+                    <div class="field field-full">
+                        <label>Selecciona la ubicación en el mapa</label>
+                        <div class="farm-map farm-map-picker" data-farm-map data-map-mode="picker" data-default-lat="4.5709" data-default-lng="-74.2973" aria-label="Mapa para seleccionar la ubicación de la finca"></div>
+                        <small class="field-hint">Haz clic en el mapa o escribe las coordenadas. Usamos OpenStreetMap.</small>
+                    </div>
+                    <div class="field">
                         <label for="area_hectares">Extensión (hectáreas)</label>
                         <input class="control" id="area_hectares" name="area_hectares" type="number" step="0.01" min="0" value="{{ old('area_hectares', $farm->area_hectares ?? '') }}">
                         @error('area_hectares')<span class="field-error">{{ $message }}</span>@enderror

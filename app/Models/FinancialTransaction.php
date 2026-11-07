@@ -7,10 +7,13 @@ use App\Models\Concerns\ScopesToAccessibleFarms;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class FinancialTransaction extends Model
+class FinancialTransaction extends Model implements HasMedia
 {
     public const TYPES = [
         'income' => 'Ingreso',
@@ -27,12 +30,15 @@ class FinancialTransaction extends Model
         ],
         'expense' => [
             'feed' => 'Alimentación',
-            'veterinary' => 'Veterinaria y medicamentos',
+            'veterinary' => 'Medicamentos y atención veterinaria',
+            'vaccination' => 'Vacunación',
             'labor' => 'Mano de obra',
             'reproduction' => 'Reproducción',
             'transport' => 'Transporte',
             'maintenance' => 'Mantenimiento',
             'utilities' => 'Servicios públicos',
+            'fertilizers' => 'Fertilizantes',
+            'repairs' => 'Reparaciones',
             'animal_purchase' => 'Compra de animales',
             'other' => 'Otros gastos',
         ],
@@ -52,7 +58,7 @@ class FinancialTransaction extends Model
     ];
 
     /** @use HasFactory<FinancialTransactionFactory> */
-    use HasFactory, LogsActivity, ScopesToAccessibleFarms;
+    use HasFactory, InteractsWithMedia, LogsActivity, ScopesToAccessibleFarms;
 
     protected $fillable = [
         'type',
@@ -92,5 +98,27 @@ class FinancialTransaction extends Model
     public function animal(): BelongsTo
     {
         return $this->belongsTo(Animal::class);
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('receipts')
+            ->useDisk('local')
+            ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        if ($media?->mime_type === 'application/pdf') {
+            return;
+        }
+
+        $this->addMediaConversion('receipt-preview')
+            ->format('webp')
+            ->quality(82)
+            ->width(900)
+            ->height(900)
+            ->performOnCollections('receipts')
+            ->nonQueued();
     }
 }

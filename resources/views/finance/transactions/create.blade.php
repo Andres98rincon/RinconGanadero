@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Registrar ingreso o gasto')
+@section('title', __('modules.finance'))
 
 @section('content')
     <div class="page-head">
         <div>
-            <div class="eyebrow"><a href="{{ route('finance.index') }}">Finanzas y costos</a> / Nuevo movimiento</div>
-            <h1>Registrar ingreso o gasto</h1>
+            <div class="eyebrow"><a href="{{ route('finance.index') }}">{{ __('modules.finance') }}</a> / {{ app()->getLocale() === 'en' ? 'New transaction' : 'Nuevo movimiento' }}</div>
+            <h1>{{ app()->getLocale() === 'en' ? 'Register income or expense' : 'Registrar ingreso o gasto' }}</h1>
             <p class="page-subtitle">Captura el movimiento con su fecha, categoría y finca o animal asociado.</p>
         </div>
     </div>
@@ -28,7 +28,7 @@
             <p class="page-subtitle">Para asociar un movimiento a un animal, búscalo arriba. También puedes registrar costos generales de una finca.</p>
         @endif
 
-        <form method="POST" action="{{ route('finance.transactions.store') }}">
+        <form method="POST" action="{{ route('finance.transactions.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="field-grid">
                 <div class="field">
@@ -66,7 +66,7 @@
                     @error('amount')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
                 <div class="field">
-                    <label for="transaction_date">Fecha *</label>
+                    <label for="transaction_date">{{ __('modules.date') }} *</label>
                     <input class="control" id="transaction_date" name="transaction_date" type="date" max="{{ today()->toDateString() }}" value="{{ old('transaction_date', today()->toDateString()) }}" required>
                     @error('transaction_date')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
@@ -75,7 +75,7 @@
                     <select class="control" id="farm_id" name="farm_id">
                         <option value="">Sin finca</option>
                         @foreach ($farms as $farm)
-                            <option value="{{ $farm->id }}" @selected((string) old('farm_id') === (string) $farm->id)>{{ $farm->code }} · {{ $farm->name }}</option>
+                            <option value="{{ $farm->id }}" @selected((string) old('farm_id', $selectedFarmId) === (string) $farm->id)>{{ $farm->code }} · {{ $farm->name }}</option>
                         @endforeach
                     </select>
                     @error('farm_id')<span class="field-error">{{ $message }}</span>@enderror
@@ -108,14 +108,20 @@
                     @error('reference')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
                 <div class="field field-full">
-                    <label for="notes">Notas</label>
+                    <label for="notes">{{ __('modules.notes') }}</label>
                     <textarea class="control" id="notes" name="notes" maxlength="10000">{{ old('notes') }}</textarea>
                     @error('notes')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
+                <div class="field field-full">
+                    <label for="attachments">Comprobantes o fotografías <span>PDF, JPG, PNG o WEBP; máximo 5 archivos de 10 MB</span></label>
+                    <input class="control" id="attachments" name="attachments[]" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple>
+                    @error('attachments')<span class="field-error">{{ $message }}</span>@enderror
+                    @error('attachments.*')<span class="field-error">{{ $message }}</span>@enderror
+                </div>
             </div>
             <div class="form-actions">
-                <a class="button button-secondary" href="{{ route('finance.index') }}">Cancelar</a>
-                <button class="button button-primary" type="submit">Guardar movimiento</button>
+                <a class="button button-secondary" href="{{ route('finance.index') }}">{{ __('modules.cancel') }}</a>
+                <button class="button button-primary" type="submit">{{ app()->getLocale() === 'en' ? 'Save transaction' : 'Guardar movimiento' }}</button>
             </div>
         </form>
     </section>

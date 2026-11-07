@@ -49,7 +49,7 @@
                         <tr>
                             <td><strong>{{ $paddock->name }}</strong><span class="animal-sub">{{ $paddock->code }}</span></td>
                             <td>{{ $paddock->farm?->code }} · {{ $paddock->farm?->name }}</td>
-                            <td>{{ $paddock->area_hectares ? number_format((float) $paddock->area_hectares, 2, ',', '.') . ' ha' : '—' }}</td>
+                            <td>@if ($paddock->area_hectares !== null){{ number_format((float) $paddock->area_hectares, 2, ',', '.') }} ha<span class="animal-sub">{{ number_format($paddock->area_square_meters, 0, ',', '.') }} m²</span>@else—@endif</td>
                             <td>{{ $paddock->capacity ? number_format($paddock->capacity) : 'Sin límite' }}</td>
                             <td>{{ number_format($paddock->animals_count) }}</td>
                             <td><span class="tag {{ $paddock->status === 'active' ? 'tag-active' : 'tag-muted' }}">{{ \App\Models\Paddock::STATUSES[$paddock->status] }}</span></td>

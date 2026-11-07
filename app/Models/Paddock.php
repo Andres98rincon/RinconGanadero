@@ -39,6 +39,11 @@ class Paddock extends Model
         ];
     }
 
+    public function getAreaSquareMetersAttribute(): ?float
+    {
+        return $this->area_hectares === null ? null : (float) $this->area_hectares * 10_000;
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

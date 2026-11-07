@@ -16,7 +16,7 @@
         <div class="stat"><span class="stat-label">Fincas registradas</span><strong class="stat-value">{{ number_format($stats['total']) }}</strong></div>
         <div class="stat"><span class="stat-label">Fincas activas</span><strong class="stat-value">{{ number_format($stats['active']) }}</strong></div>
         <div class="stat"><span class="stat-label">Animales asignados</span><strong class="stat-value">{{ number_format($stats['animals']) }}</strong></div>
-        <div class="stat"><span class="stat-label">Extensión activa</span><strong class="stat-value">{{ number_format((float) $stats['area'], 2, ',', '.') }}<span class="stat-note">ha</span></strong></div>
+        <div class="stat"><span class="stat-label">Extensión activa</span><strong class="stat-value">{{ number_format((float) $stats['area'], 2, ',', '.') }} ha</strong><span class="stat-note">{{ number_format((float) $stats['area'] * 10000, 0, ',', '.') }} m²</span></div>
     </section>
 
     <form class="filter-bar" method="GET" action="{{ route('farms.index') }}">
@@ -50,7 +50,7 @@
                             <td><a class="animal-link" href="{{ route('farms.show', $farm) }}">{{ $farm->code }}</a><span class="animal-sub">{{ $farm->name }}</span></td>
                             <td>{{ $farm->municipality ?: 'Sin municipio' }}<span class="animal-sub">{{ $farm->province ?: 'Sin departamento' }}</span></td>
                             <td>{{ $farm->manager_name ?: 'Sin asignar' }}</td>
-                            <td>{{ $farm->area_hectares ? number_format((float) $farm->area_hectares, 2, ',', '.') . ' ha' : '—' }}</td>
+                            <td>@if ($farm->area_hectares !== null){{ number_format((float) $farm->area_hectares, 2, ',', '.') }} ha<span class="animal-sub">{{ number_format($farm->area_square_meters, 0, ',', '.') }} m²</span>@else—@endif</td>
                             <td>{{ number_format($farm->animals_count) }}</td>
                             <td><span class="tag {{ $farm->status === 'active' ? 'tag-active' : 'tag-muted' }}">{{ $statusOptions[$farm->status] }}</span></td>
                         </tr>

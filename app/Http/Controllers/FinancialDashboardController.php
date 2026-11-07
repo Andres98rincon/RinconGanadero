@@ -18,7 +18,7 @@ class FinancialDashboardController extends Controller
     {
         $filters = $request->validated();
         $transactions = $this->filteredTransactions($filters)
-            ->with(['farm:id,name,code', 'animal:id,ear_tag,name'])
+            ->with(['farm:id,name,code', 'animal:id,ear_tag,name', 'media'])
             ->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->paginate(20)
@@ -137,6 +137,7 @@ class FinancialDashboardController extends Controller
             ->when($filters['farm_id'] ?? null, fn (Builder $query, int|string $farmId) => $query->where('financial_transactions.farm_id', $farmId))
             ->when($filters['animal_id'] ?? null, fn (Builder $query, int|string $animalId) => $query->where('financial_transactions.animal_id', $animalId))
             ->when($filters['type'] ?? null, fn (Builder $query, string $type) => $query->where('financial_transactions.type', $type))
+            ->when($filters['category'] ?? null, fn (Builder $query, string $category) => $query->where('financial_transactions.category', $category))
             ->when($filters['q'] ?? null, function (Builder $query, string $search): void {
                 $query->where(function (Builder $searchQuery) use ($search): void {
                     $searchQuery->where('financial_transactions.title', 'like', "%{$search}%")

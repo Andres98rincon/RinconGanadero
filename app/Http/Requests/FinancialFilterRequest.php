@@ -42,6 +42,12 @@ class FinancialFilterRequest extends FormRequest
                     fn ($query) => $query->whereIn('farm_id', $this->user()->accessibleFarmIdsQuery()),
                 ))],
             'type' => ['nullable', Rule::in(array_keys(FinancialTransaction::TYPES))],
+            'category' => ['nullable', Rule::in(array_unique(array_merge(
+                ...array_values(array_map(
+                    static fn (array $categories): array => array_keys($categories),
+                    FinancialTransaction::CATEGORIES,
+                )),
+            )))],
             'q' => ['nullable', 'string', 'max:100'],
         ];
     }

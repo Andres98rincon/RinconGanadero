@@ -1,23 +1,23 @@
 @extends('layouts.app')
 
-@section('title', 'Panel general')
+@section('title', __('dashboard.title'))
 
 @section('content')
     <div class="dashboard-head">
         <div>
             <div class="eyebrow">Panel de control · {{ now()->locale('es')->translatedFormat('l, d \d\e F \d\e Y') }}</div>
-            <h1>Tu finca, en un solo vistazo.</h1>
-            <p class="page-subtitle">Una vista clara para cuidar mejor el hato y tomar decisiones a tiempo.</p>
+            <h1>{{ __('dashboard.headline') }}</h1>
+            <p class="page-subtitle">{{ __('dashboard.subtitle') }}</p>
         </div>
         <form class="dashboard-farm-filter" method="GET" action="{{ route('dashboard') }}">
-            <label for="dashboard-farm">Vista de finca</label>
+            <label for="dashboard-farm">{{ __('dashboard.farm_view') }}</label>
             <select class="control" id="dashboard-farm" name="farm_id">
-                <option value="">Todas las fincas</option>
+                <option value="">{{ __('dashboard.all_farms') }}</option>
                 @foreach ($farms as $farm)
                     <option value="{{ $farm->id }}" @selected((string) ($filters['farm_id'] ?? '') === (string) $farm->id)>{{ $farm->name }}</option>
                 @endforeach
             </select>
-            <button class="button button-secondary" type="submit">Aplicar</button>
+            <button class="button button-secondary" type="submit">{{ __('dashboard.apply') }}</button>
         </form>
     </div>
 

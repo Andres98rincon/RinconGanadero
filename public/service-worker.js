@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rincon-ganadero-static-v2';
+const CACHE_NAME = 'rincon-ganadero-static-v3';
 const OFFLINE_URL = new URL('./offline.html', self.location).href;
 const PRECACHE_URLS = [
 	OFFLINE_URL,
@@ -40,7 +40,15 @@ self.addEventListener('fetch', (event) => {
 
 	if (request.mode === 'navigate') {
 		event.respondWith(
-			fetch(request).catch(async () => {
+			fetch(request).then(async (response) => {
+				if (response.ok && /\/(animals|farms|calendar)(?:\/|$)/.test(requestUrl.pathname)) {
+					const cache = await caches.open(CACHE_NAME);
+					await cache.put(request, response.clone());
+				}
+				return response;
+			}).catch(async () => {
+				const cachedPage = await caches.match(request);
+				if (cachedPage) return cachedPage;
 				const offlinePage = await caches.match(OFFLINE_URL);
 
 				return offlinePage || Response.error();
@@ -68,4 +76,20 @@ self.addEventListener('fetch', (event) => {
 			}),
 		);
 	}
+});
+
+self.addEventListener('push', (event) => {
+	let data = {};
+	try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'Rincón Ganadero', body: event.data?.text() || 'Tienes un nuevo recordatorio.' }; }
+	event.waitUntil(self.registration.showNotification(data.title || 'Rincón Ganadero', {
+		body: data.body || 'Tienes un nuevo recordatorio ganadero.',
+		icon: '/images/pwa/icon-192.png',
+		badge: '/images/pwa/icon-192.png',
+		data: { url: data.url || '/notifications' },
+	}));
+});
+
+self.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	event.waitUntil(clients.openWindow(event.notification.data?.url || '/notifications'));
 });

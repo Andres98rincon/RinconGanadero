@@ -21,6 +21,8 @@ class FarmRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:255'],
             'municipality' => ['nullable', 'string', 'max:100'],
             'province' => ['nullable', 'string', 'max:100'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'area_hectares' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'manager_name' => ['nullable', 'string', 'max:150'],
             'phone' => ['nullable', 'string', 'max:40'],

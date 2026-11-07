@@ -49,7 +49,7 @@
 
     <section class="table-wrap" aria-label="Historial de movimientos">
         @if ($movements->isEmpty())
-            <div class="empty-state"><strong>No hay movimientos con esos filtros.</strong>Registra compras, ventas o traslados para consultar el historial del ganado.</div>
+            <x-empty-state icon="↔" variant="search" title="No encontramos movimientos" description="No hay movimientos que coincidan con los filtros actuales." :action-url="route('animal-movements.index')" action-label="Limpiar filtros" />
         @else
             <table class="data-table">
                 <thead><tr><th>Fecha</th><th>Tipo</th><th>Animal</th><th>Origen</th><th>Destino</th><th>Precio</th><th>Contraparte / motivo de salida</th></tr></thead>

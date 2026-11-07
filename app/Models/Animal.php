@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
@@ -20,6 +21,19 @@ class Animal extends Model implements HasMedia
 {
     /** @use HasFactory<AnimalFactory> */
     use HasFactory, InteractsWithMedia, LogsActivity, ScopesToAccessibleFarms, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $animal): void {
+            if (blank($animal->qr_code)) {
+                do {
+                    $code = Str::upper(Str::random(16));
+                } while (static::query()->where('qr_code', $code)->exists());
+
+                $animal->qr_code = $code;
+            }
+        });
+    }
 
     public const SPECIES = [
         'bovine' => 'Bovino',
@@ -82,6 +96,24 @@ class Animal extends Model implements HasMedia
             'current_weight_kg' => 'decimal:2',
             'acquisition_cost' => 'decimal:2',
         ];
+    }
+
+    public function getFormattedAgeAttribute(): ?string
+    {
+        if (! $this->birth_date) {
+            return null;
+        }
+
+        $age = $this->birth_date->diff(today());
+        $parts = [];
+
+        foreach ([[$age->y, 'año', 'años'], [$age->m, 'mes', 'meses'], [$age->d, 'día', 'días']] as [$value, $singular, $plural]) {
+            if ($value > 0) {
+                $parts[] = $value.' '.($value === 1 ? $singular : $plural);
+            }
+        }
+
+        return $parts === [] ? '0 días' : implode(', ', $parts);
     }
 
     public function getActivitylogOptions(): LogOptions

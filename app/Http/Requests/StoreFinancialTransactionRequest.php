@@ -44,6 +44,8 @@ class StoreFinancialTransactionRequest extends FormRequest
             'payment_method' => ['nullable', Rule::in(array_keys(FinancialTransaction::PAYMENT_METHODS))],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:10000'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
         ];
     }
 
@@ -93,6 +95,9 @@ class StoreFinancialTransactionRequest extends FormRequest
             'transaction_date.before_or_equal' => 'La fecha del movimiento no puede ser futura.',
             'farm_id.exists' => 'La finca seleccionada no existe.',
             'animal_id.exists' => 'El animal seleccionado no existe.',
+            'attachments.max' => 'Puedes adjuntar hasta 5 comprobantes.',
+            'attachments.*.mimes' => 'Cada comprobante debe ser PDF, JPG, PNG o WEBP.',
+            'attachments.*.max' => 'Cada comprobante debe pesar como mÃ¡ximo 10 MB.',
             'payment_method.in' => 'Selecciona un medio de pago válido.',
         ];
     }

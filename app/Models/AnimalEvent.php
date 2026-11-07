@@ -14,6 +14,7 @@ class AnimalEvent extends Model
 
     protected $fillable = [
         'event_type',
+        'offline_id',
         'event_date',
         'title',
         'description',

@@ -4,6 +4,20 @@ import Swal from 'sweetalert2';
 
 select2(window, $);
 
+const appLoading = document.querySelector('[data-app-loading]');
+const hideAppLoading = () => {
+	if (!appLoading) return;
+	appLoading.classList.add('is-ready');
+	window.setTimeout(() => appLoading.remove(), 280);
+};
+
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', hideAppLoading, { once: true });
+} else {
+	hideAppLoading();
+}
+window.addEventListener('load', hideAppLoading, { once: true });
+
 let deferredInstallPrompt = null;
 const installButtons = document.querySelectorAll('[data-pwa-install]');
 const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
@@ -14,6 +28,76 @@ const isStandalone = window.matchMedia('(display-mode: standalone)').matches
 if (isStandalone) {
 	installButtons.forEach((button) => button.hidden = true);
 }
+
+const themePreference = document.querySelector('[data-theme-preference]');
+const themeChoices = document.querySelectorAll('[data-theme-choice]');
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+const applyTheme = (preference) => {
+	const isDark = preference === 'dark' || (preference === 'system' && systemTheme.matches);
+	document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+	document.body?.setAttribute('data-theme', isDark ? 'dark' : 'light');
+	document.documentElement.dataset.themePreference = preference;
+	if (themePreference) themePreference.value = preference;
+	themeChoices.forEach((choice) => choice.classList.toggle('is-selected', choice.dataset.themeChoice === preference));
+	const themeColor = document.querySelector('meta[name="theme-color"]');
+	if (themeColor) themeColor.content = isDark ? '#101a16' : '#183d32';
+};
+
+const storedTheme = localStorage.getItem('rincon-ganadero-theme');
+applyTheme(['light', 'dark', 'system'].includes(storedTheme) ? storedTheme : 'light');
+themePreference?.addEventListener('change', () => {
+	const preference = themePreference.value;
+	localStorage.setItem('rincon-ganadero-theme', preference);
+	applyTheme(preference);
+});
+themeChoices.forEach((choice) => choice.addEventListener('click', () => {
+		const preference = choice.dataset.themeChoice === 'dark' ? 'dark' : 'light';
+		localStorage.setItem('rincon-ganadero-theme', preference);
+		applyTheme(preference);
+}));
+systemTheme.addEventListener?.('change', () => {
+	if ((localStorage.getItem('rincon-ganadero-theme') || 'system') === 'system') applyTheme('system');
+});
+
+const initializeFarmMaps = () => {
+	if (!window.L) return;
+	document.querySelectorAll('[data-farm-map]').forEach((element) => {
+		if (element.dataset.mapReady === 'true') return;
+		element.dataset.mapReady = 'true';
+		const picker = element.dataset.mapMode === 'picker';
+		const latitudeInput = document.querySelector('[data-farm-latitude]');
+		const longitudeInput = document.querySelector('[data-farm-longitude]');
+		const latitude = Number(picker ? latitudeInput?.value : element.dataset.lat) || Number(element.dataset.defaultLat);
+		const longitude = Number(picker ? longitudeInput?.value : element.dataset.lng) || Number(element.dataset.defaultLng);
+		const map = window.L.map(element).setView([latitude, longitude], picker && !latitudeInput?.value ? 5 : 13);
+		window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
+		let marker = null;
+		const setLocation = (lat, lng) => {
+			marker?.setLatLng([lat, lng]);
+			if (!marker) marker = window.L.marker([lat, lng]).addTo(map);
+			if (picker) {
+				latitudeInput.value = lat.toFixed(7);
+				longitudeInput.value = lng.toFixed(7);
+				latitudeInput.dispatchEvent(new Event('input', { bubbles: true }));
+				longitudeInput.dispatchEvent(new Event('input', { bubbles: true }));
+			}
+		};
+		if (!picker || latitudeInput?.value || longitudeInput?.value) setLocation(latitude, longitude);
+		if (picker) {
+			map.on('click', (event) => setLocation(event.latlng.lat, event.latlng.lng));
+			[latitudeInput, longitudeInput].forEach((input) => input?.addEventListener('change', () => {
+				const lat = Number(latitudeInput.value);
+				const lng = Number(longitudeInput.value);
+				if (Number.isFinite(lat) && Number.isFinite(lng)) { setLocation(lat, lng); map.setView([lat, lng], 13); }
+			}));
+		} else if (marker) {
+			marker.bindPopup(`<strong>${element.dataset.farmName || 'Finca'}</strong><br>${element.dataset.farmCode || ''}`).openPopup();
+		}
+		setTimeout(() => map.invalidateSize(), 100);
+	});
+};
+
+initializeFarmMaps();
 
 window.addEventListener('beforeinstallprompt', (event) => {
 	event.preventDefault();
@@ -68,7 +152,7 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
 
 const initializeSearchSelects = (root = document) => {
 	root.querySelectorAll('select').forEach((select) => {
-		if ($(select).hasClass('select2-hidden-accessible')) {
+		if (select.matches('[data-no-select2]') || $(select).hasClass('select2-hidden-accessible')) {
 			return;
 		}
 
@@ -88,6 +172,247 @@ const initializeSearchSelects = (root = document) => {
 };
 
 initializeSearchSelects();
+
+// Voice dictation for long text fields. The textarea remains fully editable so
+// browsers without SpeechRecognition still have the manual input fallback.
+const speechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const initializeVoiceInputs = (root = document) => {
+	root.querySelectorAll('textarea').forEach((textarea) => {
+		if (textarea.dataset.voiceReady === 'true') return;
+		textarea.dataset.voiceReady = 'true';
+
+		const wrapper = document.createElement('div');
+		wrapper.className = 'voice-input-wrapper';
+		textarea.parentNode.insertBefore(wrapper, textarea);
+		wrapper.appendChild(textarea);
+
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'voice-input-button';
+		button.dataset.voiceDictation = 'true';
+		button.setAttribute('aria-label', 'Dictar texto');
+		button.innerHTML = '<span aria-hidden="true">🎙</span>';
+
+		const status = document.createElement('span');
+		status.className = 'voice-input-status';
+		status.dataset.voiceStatus = 'true';
+		status.setAttribute('role', 'status');
+		status.setAttribute('aria-live', 'polite');
+		wrapper.append(button, status);
+
+		if (!speechRecognition) {
+			button.hidden = true;
+			status.textContent = 'Dictado no disponible en este navegador; escribe manualmente.';
+			return;
+		}
+
+		let recognition = null;
+		let listening = false;
+		let baseValue = '';
+		button.addEventListener('click', () => {
+			if (listening) {
+				recognition?.stop();
+				return;
+			}
+
+			recognition = new speechRecognition();
+			recognition.lang = document.documentElement.lang || 'es-CO';
+			recognition.continuous = false;
+			recognition.interimResults = true;
+			baseValue = textarea.value.trim();
+			recognition.onstart = () => {
+				listening = true;
+				button.classList.add('is-listening');
+				button.setAttribute('aria-label', 'Detener dictado');
+				status.textContent = 'Escuchando…';
+			};
+			recognition.onresult = (event) => {
+				const transcript = Array.from(event.results)
+					.map((result) => result[0]?.transcript || '')
+					.join(' ').trim();
+				textarea.value = [baseValue, transcript].filter(Boolean).join(baseValue && transcript ? ' ' : '');
+				textarea.dispatchEvent(new Event('input', { bubbles: true }));
+			};
+			recognition.onerror = (event) => {
+				status.textContent = event.error === 'not-allowed'
+					? 'Permiso de micrófono denegado; puedes escribir manualmente.'
+					: 'No fue posible reconocer la voz; inténtalo de nuevo o escribe manualmente.';
+			};
+			recognition.onend = () => {
+				listening = false;
+				button.classList.remove('is-listening');
+				button.setAttribute('aria-label', 'Dictar texto');
+				if (!status.textContent || status.textContent === 'Escuchando…') status.textContent = 'Dictado listo.';
+			};
+			recognition.start();
+		});
+	});
+};
+
+initializeVoiceInputs();
+window.RinconGanaderoVoice = { initialize: initializeVoiceInputs, supported: Boolean(speechRecognition) };
+
+// Offline-first queue: records remain in IndexedDB until the server confirms them.
+const offlineStatus = document.querySelector('[data-offline-status]');
+const offlineSyncUrl = document.querySelector('meta[name="offline-sync-url"]')?.content;
+const offlineDb = new Promise((resolve, reject) => {
+	const request = indexedDB.open('hato-soft-offline', 1);
+	request.onupgradeneeded = () => request.result.createObjectStore('operations', { keyPath: 'id' });
+	request.onsuccess = () => resolve(request.result);
+	request.onerror = () => reject(request.error);
+});
+const offlineStore = async (mode = 'readonly') => (await offlineDb).transaction('operations', mode).objectStore('operations');
+const offlineAll = () => new Promise(async (resolve, reject) => { const request = (await offlineStore()).getAll(); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+const offlinePut = (operation) => new Promise(async (resolve, reject) => { const request = (await offlineStore('readwrite')).put(operation); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
+const offlineDelete = (id) => new Promise(async (resolve, reject) => { const request = (await offlineStore('readwrite')).delete(id); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
+const updateOfflineStatus = async (message = null) => {
+	if (!offlineStatus) return;
+	const operations = await offlineAll().catch(() => []);
+	const pending = operations.filter((operation) => operation.status !== 'synced').length;
+	offlineStatus.hidden = navigator.onLine && pending === 0 && !message;
+	offlineStatus.textContent = message || (navigator.onLine ? `Conectado · ${pending} registro${pending === 1 ? '' : 's'} pendiente${pending === 1 ? '' : 's'}` : `Sin conexión · ${pending} registro${pending === 1 ? '' : 's'} guardado${pending === 1 ? '' : 's'} en este dispositivo`);
+	offlineStatus.classList.toggle('is-offline', !navigator.onLine);
+};
+const queueOfflineForm = async (form) => {
+	const data = Object.fromEntries([...new FormData(form)].filter(([key]) => key !== '_token' && key !== '_method'));
+	const operation = { id: crypto.randomUUID(), type: form.dataset.offlineForm, animal_id: Number(form.dataset.offlineAnimalId), payload: data, status: 'pending', created_at: new Date().toISOString() };
+	await offlinePut(operation);
+	await updateOfflineStatus('Registro guardado en este dispositivo. Se sincronizará al recuperar la conexión.');
+};
+const syncOfflineOperations = async () => {
+	if (!navigator.onLine || !offlineSyncUrl) return;
+	const operations = (await offlineAll().catch(() => [])).filter((operation) => operation.status !== 'synced');
+	if (!operations.length) return updateOfflineStatus();
+	try {
+		const response = await fetch(offlineSyncUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ operations }) });
+		if (!response.ok) throw new Error('sync-failed');
+		const result = await response.json();
+		for (const item of result.results || []) {
+			if (item.status === 'synced') await offlineDelete(item.id);
+			else await offlinePut({ ...operations.find((operation) => operation.id === item.id), status: item.status, last_error: item.message });
+		}
+		await updateOfflineStatus(result.results?.some((item) => item.status === 'error' || item.status === 'denied') ? 'Algunos registros necesitan revisión antes de sincronizarse.' : 'Registros offline sincronizados correctamente.');
+	} catch { await updateOfflineStatus('No fue posible sincronizar todavía. Los registros siguen guardados en este dispositivo.'); }
+};
+document.querySelectorAll('[data-offline-form]').forEach((form) => form.addEventListener('submit', async (event) => {
+	event.preventDefault();
+	try {
+		if (!navigator.onLine) throw new Error('offline');
+		const response = await fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin', redirect: 'follow' });
+		if (!response.ok) throw new Error('request-failed');
+		window.location.assign(response.url);
+	} catch { await queueOfflineForm(form); form.reset(); }
+}));
+window.addEventListener('online', syncOfflineOperations);
+window.addEventListener('offline', updateOfflineStatus);
+offlineDb.then(() => { updateOfflineStatus(); syncOfflineOperations(); }).catch(() => {});
+
+const pushToggle = document.querySelector('[data-push-toggle]');
+const pushStatus = document.querySelector('[data-push-status]');
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+const urlBase64ToUint8Array = (value) => Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_/g, '/')), (char) => char.charCodeAt(0));
+
+pushToggle?.addEventListener('click', async () => {
+	if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+		if (pushStatus) pushStatus.textContent = 'Este navegador no admite notificaciones PWA.';
+		return;
+	}
+	try {
+		if (Notification.permission !== 'granted') {
+			const permission = await Notification.requestPermission();
+			if (permission !== 'granted') throw new Error('permission-denied');
+		}
+		const registration = await navigator.serviceWorker.ready;
+		const publicKey = pushToggle.dataset.pushPublicKey;
+		if (!publicKey) {
+			if (pushStatus) pushStatus.textContent = 'Autorización concedida. El administrador debe configurar la clave VAPID para activar el envío remoto.';
+			pushToggle.textContent = 'Autorización concedida';
+			return;
+		}
+		const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+		const payload = subscription.toJSON();
+		await fetch('/notifications/push-subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }, body: JSON.stringify({ endpoint: payload.endpoint, keys: payload.keys, contentEncoding: payload.encoding || 'aes128gcm' }) });
+		pushToggle.textContent = 'Notificaciones activadas';
+		if (pushStatus) pushStatus.textContent = 'Este dispositivo recibirá los recordatorios programados.';
+	} catch (error) {
+		if (pushStatus) pushStatus.textContent = error.message === 'permission-denied' ? 'Permiso denegado. Puedes activarlo desde la configuración del navegador.' : 'No fue posible registrar este dispositivo para notificaciones.';
+	}
+});
+
+const scanQrButton = document.querySelector('[data-qr-scan-open]');
+const scannerPanel = document.querySelector('[data-qr-scanner]');
+const scannerVideo = document.querySelector('[data-qr-video]');
+const scannerStatus = document.querySelector('[data-qr-scanner-status]');
+let qrScannerControls = null;
+let qrScannerActive = false;
+
+const stopQrScanner = () => {
+	qrScannerActive = false;
+	qrScannerControls?.stop();
+	qrScannerControls = null;
+	if (scannerVideo) {
+		scannerVideo.srcObject?.getTracks().forEach((track) => track.stop());
+		scannerVideo.srcObject = null;
+	}
+};
+
+document.querySelector('[data-qr-scan-close]')?.addEventListener('click', () => {
+	stopQrScanner();
+	if (scanQrButton) scanQrButton.disabled = false;
+	if (scannerPanel) scannerPanel.hidden = true;
+});
+
+scanQrButton?.addEventListener('click', async () => {
+	if (!scannerPanel || !scannerVideo || !scannerStatus) return;
+	scannerPanel.hidden = false;
+	qrScannerActive = true;
+	scannerStatus.textContent = 'Solicitando acceso a la cámara…';
+	scanQrButton.disabled = true;
+
+	try {
+		const { BrowserQRCodeReader } = await import('@zxing/browser');
+		if (!qrScannerActive) return;
+		const qrScannerReader = new BrowserQRCodeReader();
+		qrScannerControls = await qrScannerReader.decodeFromVideoDevice(undefined, scannerVideo, (result, error) => {
+			if (!qrScannerActive) return;
+			if (result) {
+				let scannedUrl;
+				try {
+					scannedUrl = new URL(result.getText(), window.location.origin);
+				} catch {
+					scannerStatus.textContent = 'El código no contiene una dirección válida de Rincón Ganadero.';
+					return;
+				}
+
+				const validPath = /^\/animals\/qr\/[A-Z0-9]{16}$/.test(scannedUrl.pathname);
+
+				if (scannedUrl.origin !== window.location.origin || !validPath) {
+					scannerStatus.textContent = 'El código no pertenece a un animal de Rincón Ganadero.';
+					return;
+				}
+
+				stopQrScanner();
+				window.location.assign(scannedUrl.href);
+			} else if (error && error.name !== 'NotFoundException') {
+				scannerStatus.textContent = 'No fue posible leer el código. Ajusta la cámara e inténtalo de nuevo.';
+			}
+		});
+		if (!qrScannerActive) {
+			stopQrScanner();
+			return;
+		}
+		scannerStatus.textContent = 'Apunta la cámara al código QR del animal.';
+	} catch (error) {
+		scannerStatus.textContent = window.isSecureContext
+			? 'No se pudo acceder a la cámara. Revisa el permiso del navegador o usa la búsqueda manual.'
+			: 'La cámara requiere una conexión segura (HTTPS). Usa la búsqueda manual por código.';
+		stopQrScanner();
+	}
+
+	scanQrButton.disabled = false;
+});
+
+window.addEventListener('pagehide', stopQrScanner);
 
 const importFile = document.querySelector('#animal-import-file');
 
@@ -138,18 +463,23 @@ const speciesSelect = document.querySelector('[data-species-select]');
 
 if (speciesSelect) {
 	const relatedSelects = document.querySelectorAll('[data-species-options]');
+	const originalOptions = new Map(Array.from(relatedSelects, (select) => [
+		select,
+		Array.from(select.options, (option) => option.cloneNode(true)),
+	]));
 
 	const filterOptions = () => {
 		relatedSelects.forEach((select) => {
-			Array.from(select.options).forEach((option) => {
-				option.disabled = Boolean(option.dataset.species && option.dataset.species !== speciesSelect.value);
-			});
+			const selectedValue = select.value;
+			const options = originalOptions.get(select).filter((option) => (
+				!option.dataset.species || option.dataset.species === speciesSelect.value
+			));
+			const selectedOption = options.find((option) => option.value === selectedValue);
 
-			if (select.selectedOptions[0]?.disabled) {
-				select.value = '';
-			}
+			select.replaceChildren(...options.map((option) => option.cloneNode(true)));
+			select.value = selectedOption ? selectedValue : '';
 
-			$(select).trigger('change.select2');
+			$(select).trigger('change');
 		});
 	};
 

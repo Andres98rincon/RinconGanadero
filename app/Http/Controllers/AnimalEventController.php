@@ -14,6 +14,9 @@ class AnimalEventController extends Controller
     public const TYPES = [
         'weighing' => 'Pesaje',
         'vaccination' => 'Vacunacion',
+        'deworming' => 'Desparasitacion',
+        'medication_expiry' => 'Vencimiento de medicamento',
+        'supply_expiry' => 'Vencimiento de insumo',
         'treatment' => 'Tratamiento',
         'health_check' => 'Revision sanitaria',
         'breeding' => 'Monta',
@@ -29,6 +32,7 @@ class AnimalEventController extends Controller
     {
         $validated = $request->validate([
             'event_type' => ['required', Rule::in(array_keys(self::TYPES))],
+            'offline_id' => ['nullable', 'uuid'],
             'event_date' => ['required', 'date', 'before_or_equal:today'],
             'title' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:10000'],

@@ -9,9 +9,14 @@ use App\Imports\AnimalImport;
 use App\Models\Animal;
 use App\Models\Breed;
 use App\Models\Farm;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Excel as ExcelWriter;
 use Maatwebsite\Excel\Exceptions\LaravelExcelException;
@@ -122,6 +127,42 @@ class AnimalController extends Controller
     public function template(): BinaryFileResponse
     {
         return Excel::download(new AnimalTemplateExport, 'plantilla-animales.xlsx', ExcelWriter::XLSX);
+    }
+
+    public function lookup(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'size:16', 'regex:/^[A-Z0-9]+$/i'],
+        ]);
+
+        $animal = Animal::query()->where('qr_code', strtoupper($validated['code']))->firstOrFail();
+        Gate::authorize('view', $animal);
+
+        return to_route('animals.show', $animal);
+    }
+
+    public function resolveQr(string $qrCode): RedirectResponse
+    {
+        abort_unless(preg_match('/^[A-Z0-9]{16}$/', $qrCode) === 1, 404);
+
+        $animal = Animal::query()->where('qr_code', $qrCode)->firstOrFail();
+        Gate::authorize('view', $animal);
+
+        return to_route('animals.show', $animal);
+    }
+
+    public function qrImage(Animal $animal): \Illuminate\Http\Response
+    {
+        Gate::authorize('view', $animal);
+
+        $svg = (new Writer(new ImageRenderer(new RendererStyle(320, 2), new SvgImageBackEnd())))
+            ->writeString(route('animals.qr.resolve', $animal->qr_code));
+
+        return response($svg, 200, [
+            'Content-Type' => 'image/svg+xml; charset=UTF-8',
+            'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     /**

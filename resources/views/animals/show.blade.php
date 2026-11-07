@@ -37,7 +37,7 @@
             </div>
             <dl class="detail-list">
                 <div class="detail-item"><dt>Sexo</dt><dd>{{ ['female' => 'Hembra', 'male' => 'Macho', 'unknown' => 'Sin definir'][$animal->sex] ?? 'Sin definir' }}</dd></div>
-                <div class="detail-item"><dt>Nacimiento / edad</dt><dd>{{ $animal->birth_date?->format('d/m/Y') ?? 'Sin fecha' }}{{ $animal->birth_date ? ' · ' . $animal->birth_date->age . ' años' : '' }}</dd></div>
+                <div class="detail-item"><dt>Nacimiento / edad</dt><dd>{{ $animal->birth_date?->format('d/m/Y') ?? 'Sin fecha' }}{{ $animal->formatted_age ? ' · ' . $animal->formatted_age : '' }}</dd></div>
                 <div class="detail-item"><dt>Microchip</dt><dd>{{ $animal->microchip ?: 'No registrado' }}</dd></div>
                 <div class="detail-item"><dt>Registro genealógico</dt><dd>{{ $animal->registration_number ?: 'No registrado' }}</dd></div>
                 <div class="detail-item"><dt>Peso al nacer</dt><dd>{{ $animal->birth_weight_kg ? $animal->birth_weight_kg . ' kg' : 'Sin dato' }}</dd></div>
@@ -60,11 +60,20 @@
                     <div class="detail-item"><dt>Notas</dt><dd>{{ $animal->notes }}</dd></div>
                 @endif
             </dl>
+
+            <section class="animal-qr-card" aria-labelledby="animal-qr-title">
+                <div class="detail-title">
+                    <div><h2 id="animal-qr-title">Código QR individual</h2><p>Escanéalo para abrir esta ficha con una cuenta autorizada.</p></div>
+                </div>
+                <img class="animal-qr-image" src="{{ route('animals.qr.image', $animal) }}" alt="Código QR para abrir la ficha de {{ $animal->ear_tag }}" width="240" height="240">
+                <p class="animal-qr-code"><span>Código manual</span><strong>{{ $animal->qr_code }}</strong></p>
+                <a class="button button-secondary" href="{{ route('animals.qr.image', $animal) }}" download="animal-{{ $animal->qr_code }}.svg">Descargar QR</a>
+            </section>
         </section>
 
         <section class="history-panel">
             <h2>Bitácora de campo</h2>
-            <form class="event-form" method="POST" action="{{ route('animals.events.store', $animal) }}">
+            <form class="event-form" method="POST" action="{{ route('animals.events.store', $animal) }}" data-offline-form="animal-event" data-offline-animal-id="{{ $animal->id }}">
                 @csrf
                 <div class="field">
                     <label for="event_type">Tipo</label>

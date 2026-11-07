@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FinancialTransactionController extends Controller
 {
@@ -20,6 +21,9 @@ class FinancialTransactionController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
             'animal_id' => ['nullable', 'integer', Rule::exists('animals', 'id')->whereNull('deleted_at')],
             'type' => ['nullable', Rule::in(array_keys(FinancialTransaction::TYPES))],
+            'farm_id' => ['nullable', 'integer', Rule::exists('farms', 'id')->where(fn ($query) => $query
+                ->whereNull('deleted_at')
+                ->whereIn('id', $request->user()->accessibleFarmIdsQuery()))],
         ]);
         $search = trim($filters['q'] ?? '');
         $selectedAnimalId = $request->integer('animal_id') ?: null;
@@ -45,6 +49,7 @@ class FinancialTransactionController extends Controller
             'farms' => Farm::query()->orderBy('name')->get(['id', 'name', 'code']),
             'search' => $search,
             'selectedAnimalId' => $selectedAnimalId,
+            'selectedFarmId' => $filters['farm_id'] ?? null,
             'selectedType' => $filters['type'] ?? null,
             'types' => FinancialTransaction::TYPES,
             'categories' => array_map(
@@ -58,12 +63,18 @@ class FinancialTransactionController extends Controller
     public function store(StoreFinancialTransactionRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $attachments = $request->file('attachments', []);
+        unset($validated['attachments']);
         $animal = ! empty($validated['animal_id'])
             ? Animal::query()->findOrFail($validated['animal_id'])
             : null;
         $validated['farm_id'] = $animal?->farm_id ?? ($validated['farm_id'] ?? null);
 
-        FinancialTransaction::query()->create($validated);
+        $transaction = FinancialTransaction::query()->create($validated);
+
+        foreach ($attachments ?? [] as $attachment) {
+            $transaction->addMedia($attachment)->toMediaCollection('receipts');
+        }
 
         return redirect()->route('finance.index', [
             'from' => $validated['transaction_date'],
@@ -71,5 +82,13 @@ class FinancialTransactionController extends Controller
             'farm_id' => $validated['farm_id'],
             'animal_id' => $animal?->id,
         ])->with('success', 'Movimiento financiero registrado correctamente.');
+    }
+
+    public function attachment(FinancialTransaction $transaction, int $media): BinaryFileResponse
+    {
+        $attachment = $transaction->getMedia('receipts')->firstWhere('id', $media);
+        abort_unless($attachment && is_file($attachment->getPath()), 404);
+
+        return response()->download($attachment->getPath(), $attachment->file_name);
     }
 }

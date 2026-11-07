@@ -9,6 +9,8 @@ use App\Models\Farm;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class FarmController extends Controller
@@ -70,8 +72,33 @@ class FarmController extends Controller
     {
         $farm->loadCount('animals');
         $animals = $farm->animals()->with(['breed', 'paddock'])->latest('id')->paginate(15);
+        $expenseYear = (int) now()->year;
+        $annualExpenses = 0;
+        $expenseEvolution = collect();
 
-        return view('farms.show', compact('farm', 'animals'));
+        if (request()->user()->can('finance.view')) {
+            $yearStart = today()->startOfYear()->toDateString();
+            $yearEnd = today()->toDateString();
+            $annualExpenses = $farm->financialTransactions()
+                ->where('type', 'expense')
+                ->whereBetween('transaction_date', [$yearStart, $yearEnd])
+                ->sum('amount');
+            $monthExpression = DB::connection()->getDriverName() === 'sqlite'
+                ? "strftime('%Y-%m', transaction_date)"
+                : "DATE_FORMAT(transaction_date, '%Y-%m')";
+            $monthlyExpenseTotals = $farm->financialTransactions()
+                ->where('type', 'expense')
+                ->whereBetween('transaction_date', [$yearStart, $yearEnd])
+                ->selectRaw("{$monthExpression} as month, SUM(amount) as amount")
+                ->groupByRaw($monthExpression)
+                ->pluck('amount', 'month');
+            $expenseEvolution = collect(range(1, 12))->map(fn (int $month): array => [
+                'label' => Carbon::createFromDate($expenseYear, $month, 1)->locale('es')->translatedFormat('F'),
+                'amount' => (float) $monthlyExpenseTotals->get(sprintf('%04d-%02d', $expenseYear, $month), 0),
+            ]);
+        }
+
+        return view('farms.show', compact('farm', 'animals', 'expenseYear', 'annualExpenses', 'expenseEvolution'));
     }
 
     public function edit(Farm $farm): View

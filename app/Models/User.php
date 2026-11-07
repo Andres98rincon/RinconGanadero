@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Notifications\Notifiable;
@@ -54,6 +55,16 @@ class User extends Authenticatable implements HasMedia
     public function farms(): BelongsToMany
     {
         return $this->belongsToMany(Farm::class)->withTimestamps();
+    }
+
+    public function notificationPreference(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(NotificationPreference::class);
+    }
+
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
     }
 
     public function accessibleFarmIdsQuery(): QueryBuilder

@@ -28,6 +28,8 @@ class Farm extends Model
         'address',
         'municipality',
         'province',
+        'latitude',
+        'longitude',
         'area_hectares',
         'manager_name',
         'phone',
@@ -40,7 +42,14 @@ class Farm extends Model
     {
         return [
             'area_hectares' => 'decimal:2',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
+    }
+
+    public function getAreaSquareMetersAttribute(): ?float
+    {
+        return $this->area_hectares === null ? null : (float) $this->area_hectares * 10_000;
     }
 
     public function getActivitylogOptions(): LogOptions

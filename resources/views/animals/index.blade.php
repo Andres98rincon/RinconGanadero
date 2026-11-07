@@ -11,11 +11,13 @@
         </div>
         <div class="page-actions">
             @can('animals.export')
-                <a class="button button-secondary" href="{{ route('animals.export', ['format' => 'xlsx'] + request()->query()) }}" data-export>Exportar Excel</a>
-                <a class="button button-secondary" href="{{ route('animals.export', ['format' => 'csv'] + request()->query()) }}" data-export>Exportar CSV</a>
-            @endcan
-            @can('animals.import')
-                <a class="button button-secondary" href="{{ route('animals.import-template') }}" data-export>Descargar plantilla</a>
+                <details class="action-menu">
+                    <summary class="button button-secondary"><span aria-hidden="true">⇩</span> Exportar</summary>
+                    <div class="action-menu-content">
+                        <a href="{{ route('animals.export', ['format' => 'xlsx'] + request()->query()) }}" data-export>Excel (.xlsx)</a>
+                        <a href="{{ route('animals.export', ['format' => 'csv'] + request()->query()) }}" data-export>CSV</a>
+                    </div>
+                </details>
             @endcan
             @can('create', App\Models\Animal::class)
                 <a class="button button-primary" href="{{ route('animals.create') }}"><span aria-hidden="true">+</span> Registrar animal</a>
@@ -23,19 +25,38 @@
         </div>
     </div>
 
-    @can('animals.import')
-        <form class="animal-import-panel" method="POST" action="{{ route('animals.import') }}" enctype="multipart/form-data">
-            @csrf
-            <div>
-                <strong>Importar animales</strong>
-                <p>Usa la plantilla del sistema en formato Excel o CSV. Los identificadores y microchips duplicados se rechazan.</p>
+    <section class="animal-lookup-panel" aria-label="Consultar animal por código QR">
+        <form class="animal-lookup-form" method="GET" action="{{ route('animals.lookup') }}">
+            <div class="field">
+                <label for="animal-qr-code">Buscar animal por código</label>
+                <input class="control" id="animal-qr-code" name="code" type="search" minlength="16" maxlength="16" pattern="[A-Za-z0-9]{16}" autocomplete="off" placeholder="Ingresa el código QR" required>
             </div>
-            <label class="button button-secondary import-file-label" for="animal-import-file">Seleccionar archivo</label>
-            <input class="visually-hidden" id="animal-import-file" name="file" type="file" accept=".xlsx,.csv" required>
-            <span class="import-file-name" data-import-file-name>Sin archivo seleccionado</span>
-            <button class="button button-primary" type="submit">Importar</button>
-            @error('file')<span class="field-error field-full">{{ $message }}</span>@enderror
+            <button class="button button-secondary" type="submit">Buscar</button>
+            <button class="button button-primary" type="button" data-qr-scan-open>Escanear con cámara</button>
         </form>
+        <div class="qr-scanner" data-qr-scanner hidden>
+            <video class="qr-scanner-video" data-qr-video playsinline muted aria-label="Vista de la cámara para escanear el código QR"></video>
+            <p data-qr-scanner-status role="status">Apunta la cámara al código QR del animal.</p>
+            <button class="button button-secondary" type="button" data-qr-scan-close>Detener cámara</button>
+        </div>
+    </section>
+
+    @can('animals.import')
+        <details class="animal-import-panel">
+            <summary class="animal-import-summary"><span><strong>Importar animales</strong><small>Excel o CSV</small></span><span aria-hidden="true">＋</span></summary>
+            <form class="animal-import-form" method="POST" action="{{ route('animals.import') }}" enctype="multipart/form-data">
+                @csrf
+                <p>Usa la plantilla del sistema. Los identificadores y microchips duplicados se rechazan.</p>
+                <div class="animal-import-controls">
+                    <a class="button button-secondary button-small" href="{{ route('animals.import-template') }}" data-export>Descargar plantilla</a>
+                    <label class="button button-secondary button-small import-file-label" for="animal-import-file">Seleccionar archivo</label>
+                    <input class="visually-hidden" id="animal-import-file" name="file" type="file" accept=".xlsx,.csv" required>
+                    <span class="import-file-name" data-import-file-name>Sin archivo seleccionado</span>
+                    <button class="button button-primary button-small" type="submit">Importar</button>
+                </div>
+                @error('file')<span class="field-error field-full">{{ $message }}</span>@enderror
+            </form>
+        </details>
     @endcan
 
     @if (session('import_report'))
@@ -98,10 +119,7 @@
 
     <section class="table-wrap" aria-label="Animales registrados">
         @if ($animals->isEmpty())
-            <div class="empty-state">
-                <strong>{{ $filters ? 'No encontramos animales con esos filtros.' : 'El inventario esta listo para empezar.' }}</strong>
-                {{ $filters ? 'Prueba con otros datos de busqueda.' : 'Registra el primer animal para comenzar su seguimiento.' }}
-            </div>
+            <x-empty-state icon="🐄" :variant="$filters ? 'search' : 'module'" :title="$filters ? 'No encontramos animales' : '¡Tu inventario está vacío!'" :description="$filters ? 'No hay animales que coincidan con los filtros actuales.' : 'Aún no tienes animales registrados. Comienza agregando tu primer animal.'" :action-url="$filters ? null : route('animals.create')" :action-label="$filters ? null : 'Registrar primer animal'" />
         @else
             <table class="data-table">
                 <thead>
