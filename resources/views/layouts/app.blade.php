@@ -34,14 +34,14 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
-    {{-- <div class="app-loading" data-app-loading role="status" aria-live="polite">
+    <div class="app-loading" data-app-loading role="status" aria-live="polite">
         <div class="app-loading-card">
             <img src="{{ asset('images/rincon-ganadero.png') }}" alt="" class="app-loading-logo">
             <div class="app-loading-spinner" aria-hidden="true"></div>
             <strong>Bienvenido a Rincón Ganadero</strong>
             <span>Preparando tu espacio de trabajo…</span>
         </div>
-    </div> --}}
+    </div>
     <div class="app-shell">
         <aside class="sidebar">
             <a class="brand" href="{{ route('dashboard') }}">
