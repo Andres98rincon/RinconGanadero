@@ -22,14 +22,14 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="auth-page">
-    <div class="app-loading" data-app-loading role="status" aria-live="polite">
+    {{-- <div class="app-loading" data-app-loading role="status" aria-live="polite">
         <div class="app-loading-card">
             <img src="{{ asset('images/rincon-ganadero.png') }}" alt="" class="app-loading-logo">
             <div class="app-loading-spinner" aria-hidden="true"></div>
             <strong>Bienvenido a Rincón Ganadero</strong>
             <span>Cargando tu espacio ganadero…</span>
         </div>
-    </div>
+    </div> --}}
     @if (session('status'))
         <div class="visually-hidden" data-swal-toast="{{ session('status') }}" role="status"></div>
     @endif
