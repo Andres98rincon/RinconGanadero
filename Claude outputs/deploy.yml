@@ -1,0 +1,85 @@
+# Cada push a main: instala, compila los assets, corre las pruebas y, si todo pasa,
+# sube public/build al servidor y ejecuta deploy.sh por SSH.
+# Configuración (una sola vez): GitHub → Settings → Secrets and variables → Actions:
+#   SSH_HOST, SSH_PORT, SSH_USER, SSH_KEY (llave privada), DEPLOY_PATH, PUBLIC_PATH
+name: Desplegar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: produccion
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, gd, zip, exif, bcmath, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Instalar dependencias de PHP
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Compilar assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Correr las pruebas
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test --compact
+
+      - name: Configurar SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          PUBLIC_PATH: ${{ secrets.PUBLIC_PATH }}
+        run: |
+          for name in SSH_HOST SSH_PORT SSH_USER SSH_KEY DEPLOY_PATH PUBLIC_PATH; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Falta el secreto $name en GitHub (Settings > Secrets and variables > Actions)."
+              exit 1
+            fi
+          done
+          if ! grep -q "BEGIN OPENSSH PRIVATE KEY" <<< "$SSH_KEY"; then
+            echo "::error::SSH_KEY no parece una llave privada completa. Pega todo el archivo hatosoft_deploy, incluidas las líneas BEGIN y END."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf 'Host hostinger\n  HostName %s\n  Port %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking accept-new\n  ConnectTimeout 20\n' \
+            "$SSH_HOST" "$SSH_PORT" "$SSH_USER" > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+          ssh hostinger 'echo "Conexión SSH correcta con $(hostname)"' || {
+            echo "::error::No se pudo conectar por SSH. Revisa SSH_HOST (IP), SSH_PORT (65002), SSH_USER y que la llave pública esté agregada en Hostinger."
+            exit 1
+          }
+
+      - name: Subir public/build
+        run: rsync -az --delete public/build/ "hostinger:${{ secrets.PUBLIC_PATH }}/build/"
+
+      - name: Ejecutar deploy.sh en el servidor
+        run: ssh hostinger "cd '${{ secrets.DEPLOY_PATH }}' && bash deploy.sh"
