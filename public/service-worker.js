@@ -1,4 +1,7 @@
-const CACHE_NAME = 'rincon-ganadero-static-v3';
+const CACHE_NAME = 'rincon-ganadero-static-v4';
+// Páginas autenticadas para abrir formularios sin conexión. Se borra al cerrar sesión.
+const PAGES_CACHE = 'rincon-ganadero-pages-v1';
+const OFFLINE_PAGES = /\/(dashboard|animals|farms|calendar|weights|milk-production)(?:\/|$)/;
 const OFFLINE_URL = new URL('./offline.html', self.location).href;
 const PRECACHE_URLS = [
 	OFFLINE_URL,
@@ -23,7 +26,8 @@ self.addEventListener('activate', (event) => {
 		caches.keys()
 			.then((cacheNames) => Promise.all(
 				cacheNames
-					.filter((cacheName) => cacheName.startsWith('rincon-ganadero-static-') && cacheName !== CACHE_NAME)
+					.filter((cacheName) => (cacheName.startsWith('rincon-ganadero-static-') && cacheName !== CACHE_NAME)
+						|| (cacheName.startsWith('rincon-ganadero-pages-') && cacheName !== PAGES_CACHE))
 					.map((cacheName) => caches.delete(cacheName)),
 			))
 			.then(() => self.clients.claim()),
@@ -41,13 +45,14 @@ self.addEventListener('fetch', (event) => {
 	if (request.mode === 'navigate') {
 		event.respondWith(
 			fetch(request).then(async (response) => {
-				if (response.ok && /\/(animals|farms|calendar)(?:\/|$)/.test(requestUrl.pathname)) {
-					const cache = await caches.open(CACHE_NAME);
-					await cache.put(request, response.clone());
+				if (response.ok && !response.redirected && OFFLINE_PAGES.test(requestUrl.pathname)) {
+					const cache = await caches.open(PAGES_CACHE);
+					await cache.put(requestUrl.pathname + requestUrl.search, response.clone());
 				}
 				return response;
 			}).catch(async () => {
-				const cachedPage = await caches.match(request);
+				const cachedPage = await caches.match(requestUrl.pathname + requestUrl.search, { cacheName: PAGES_CACHE })
+					|| await caches.match(requestUrl.pathname, { cacheName: PAGES_CACHE, ignoreSearch: true });
 				if (cachedPage) return cachedPage;
 				const offlinePage = await caches.match(OFFLINE_URL);
 

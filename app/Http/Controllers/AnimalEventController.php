@@ -41,6 +41,10 @@ class AnimalEventController extends Controller
             'due_date' => ['nullable', 'date', 'after_or_equal:event_date'],
         ]);
 
+        if (filled($validated['offline_id'] ?? null) && AnimalEvent::query()->withoutGlobalScopes()->where('offline_id', $validated['offline_id'])->exists()) {
+            return redirect()->route('animals.show', $animal)->with('success', 'Este evento ya estaba registrado.');
+        }
+
         DB::transaction(function () use ($animal, $validated): void {
             $event = $animal->events()->create($validated);
 

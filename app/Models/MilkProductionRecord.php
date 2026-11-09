@@ -16,6 +16,7 @@ class MilkProductionRecord extends Model
     use HasFactory, LogsActivity, ScopesToAccessibleFarms;
 
     protected $fillable = [
+        'offline_id',
         'record_date',
         'morning_liters',
         'evening_liters',

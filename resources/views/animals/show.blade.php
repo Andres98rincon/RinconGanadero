@@ -73,7 +73,7 @@
 
         <section class="history-panel">
             <h2>Bitácora de campo</h2>
-            <form class="event-form" method="POST" action="{{ route('animals.events.store', $animal) }}" data-offline-form="animal-event" data-offline-animal-id="{{ $animal->id }}">
+            <form class="event-form" method="POST" action="{{ route('animals.events.store', $animal) }}" data-offline-form="animal-event" data-offline-animal-id="{{ $animal->id }}" data-offline-animal-label="{{ $animal->ear_tag }}{{ $animal->name ? ' · '.$animal->name : '' }}">
                 @csrf
                 <div class="field">
                     <label for="event_type">Tipo</label>

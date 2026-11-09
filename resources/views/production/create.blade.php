@@ -19,7 +19,7 @@
                     <a href="{{ route('animals.create') }}">Registrar un animal</a>
                 </div>
             @endif
-            <form method="POST" action="{{ route('milk-production.store') }}">
+            <form method="POST" action="{{ route('milk-production.store') }}" data-offline-form="milk-production">
                 @csrf
                 <div class="field-grid">
                     <div class="field field-full">

@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import select2 from 'select2';
 import Swal from 'sweetalert2';
+import './offline-sync';
 
 select2(window, $);
 
@@ -17,6 +18,24 @@ if (document.readyState === 'loading') {
 	hideAppLoading();
 }
 window.addEventListener('load', hideAppLoading, { once: true });
+
+const mobileMenuToggle = document.querySelector('[data-mobile-menu-toggle]');
+const mobileMenuBackdrop = document.querySelector('.mobile-menu-backdrop');
+const setMobileMenu = (isOpen) => {
+	document.body.classList.toggle('mobile-menu-open', isOpen);
+	mobileMenuToggle?.setAttribute('aria-expanded', String(isOpen));
+	if (mobileMenuBackdrop) mobileMenuBackdrop.hidden = !isOpen;
+	if (isOpen) document.querySelector('#app-sidebar .nav-link')?.focus({ preventScroll: true });
+};
+mobileMenuToggle?.addEventListener('click', () => setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
+document.querySelectorAll('[data-mobile-menu-close]').forEach((element) => element.addEventListener('click', () => setMobileMenu(false)));
+document.querySelectorAll('#app-sidebar a.nav-link').forEach((link) => link.addEventListener('click', () => setMobileMenu(false)));
+document.addEventListener('keydown', (event) => {
+	if (event.key === 'Escape' && document.body.classList.contains('mobile-menu-open')) setMobileMenu(false);
+});
+window.matchMedia('(min-width: 761px)').addEventListener('change', (event) => {
+	if (event.matches) setMobileMenu(false);
+});
 
 let deferredInstallPrompt = null;
 const installButtons = document.querySelectorAll('[data-pwa-install]');
@@ -252,60 +271,6 @@ const initializeVoiceInputs = (root = document) => {
 initializeVoiceInputs();
 window.RinconGanaderoVoice = { initialize: initializeVoiceInputs, supported: Boolean(speechRecognition) };
 
-// Offline-first queue: records remain in IndexedDB until the server confirms them.
-const offlineStatus = document.querySelector('[data-offline-status]');
-const offlineSyncUrl = document.querySelector('meta[name="offline-sync-url"]')?.content;
-const offlineDb = new Promise((resolve, reject) => {
-	const request = indexedDB.open('hato-soft-offline', 1);
-	request.onupgradeneeded = () => request.result.createObjectStore('operations', { keyPath: 'id' });
-	request.onsuccess = () => resolve(request.result);
-	request.onerror = () => reject(request.error);
-});
-const offlineStore = async (mode = 'readonly') => (await offlineDb).transaction('operations', mode).objectStore('operations');
-const offlineAll = () => new Promise(async (resolve, reject) => { const request = (await offlineStore()).getAll(); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
-const offlinePut = (operation) => new Promise(async (resolve, reject) => { const request = (await offlineStore('readwrite')).put(operation); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
-const offlineDelete = (id) => new Promise(async (resolve, reject) => { const request = (await offlineStore('readwrite')).delete(id); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
-const updateOfflineStatus = async (message = null) => {
-	if (!offlineStatus) return;
-	const operations = await offlineAll().catch(() => []);
-	const pending = operations.filter((operation) => operation.status !== 'synced').length;
-	offlineStatus.hidden = navigator.onLine && pending === 0 && !message;
-	offlineStatus.textContent = message || (navigator.onLine ? `Conectado · ${pending} registro${pending === 1 ? '' : 's'} pendiente${pending === 1 ? '' : 's'}` : `Sin conexión · ${pending} registro${pending === 1 ? '' : 's'} guardado${pending === 1 ? '' : 's'} en este dispositivo`);
-	offlineStatus.classList.toggle('is-offline', !navigator.onLine);
-};
-const queueOfflineForm = async (form) => {
-	const data = Object.fromEntries([...new FormData(form)].filter(([key]) => key !== '_token' && key !== '_method'));
-	const operation = { id: crypto.randomUUID(), type: form.dataset.offlineForm, animal_id: Number(form.dataset.offlineAnimalId), payload: data, status: 'pending', created_at: new Date().toISOString() };
-	await offlinePut(operation);
-	await updateOfflineStatus('Registro guardado en este dispositivo. Se sincronizará al recuperar la conexión.');
-};
-const syncOfflineOperations = async () => {
-	if (!navigator.onLine || !offlineSyncUrl) return;
-	const operations = (await offlineAll().catch(() => [])).filter((operation) => operation.status !== 'synced');
-	if (!operations.length) return updateOfflineStatus();
-	try {
-		const response = await fetch(offlineSyncUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ operations }) });
-		if (!response.ok) throw new Error('sync-failed');
-		const result = await response.json();
-		for (const item of result.results || []) {
-			if (item.status === 'synced') await offlineDelete(item.id);
-			else await offlinePut({ ...operations.find((operation) => operation.id === item.id), status: item.status, last_error: item.message });
-		}
-		await updateOfflineStatus(result.results?.some((item) => item.status === 'error' || item.status === 'denied') ? 'Algunos registros necesitan revisión antes de sincronizarse.' : 'Registros offline sincronizados correctamente.');
-	} catch { await updateOfflineStatus('No fue posible sincronizar todavía. Los registros siguen guardados en este dispositivo.'); }
-};
-document.querySelectorAll('[data-offline-form]').forEach((form) => form.addEventListener('submit', async (event) => {
-	event.preventDefault();
-	try {
-		if (!navigator.onLine) throw new Error('offline');
-		const response = await fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin', redirect: 'follow' });
-		if (!response.ok) throw new Error('request-failed');
-		window.location.assign(response.url);
-	} catch { await queueOfflineForm(form); form.reset(); }
-}));
-window.addEventListener('online', syncOfflineOperations);
-window.addEventListener('offline', updateOfflineStatus);
-offlineDb.then(() => { updateOfflineStatus(); syncOfflineOperations(); }).catch(() => {});
 
 const pushToggle = document.querySelector('[data-push-toggle]');
 const pushStatus = document.querySelector('[data-push-status]');
@@ -340,77 +305,183 @@ pushToggle?.addEventListener('click', async () => {
 });
 
 const scanQrButton = document.querySelector('[data-qr-scan-open]');
+const scanQrPhotoInput = document.querySelector('[data-qr-photo-input]');
+const scanQrPhotoButton = document.querySelector('[data-qr-photo-open]');
 const scannerPanel = document.querySelector('[data-qr-scanner]');
 const scannerVideo = document.querySelector('[data-qr-video]');
 const scannerStatus = document.querySelector('[data-qr-scanner-status]');
+const qrLookupForm = document.querySelector('.animal-lookup-form');
 let qrScannerControls = null;
 let qrScannerActive = false;
+let qrReaderPromise = null;
+
+const loadQrReader = () => {
+	qrReaderPromise ??= import('@zxing/browser').then(({ BrowserQRCodeReader }) => new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 150 }));
+
+	return qrReaderPromise;
+};
+
+/**
+ * Accepts the URL printed on the animal QR (any host or base path, e.g. /HatoSoft/public/animals/qr/CODE)
+ * or the bare 16 character code, and returns the normalized code.
+ */
+const extractAnimalQrCode = (text) => {
+	const value = String(text || '').trim();
+	const fromUrl = value.match(/\/animals\/qr\/([A-Za-z0-9]{16})(?:[/?#]|$)/);
+
+	if (fromUrl) return fromUrl[1].toUpperCase();
+	if (/^[A-Za-z0-9]{16}$/.test(value)) return value.toUpperCase();
+
+	return null;
+};
+
+const setScannerStatus = (message, tone = 'info') => {
+	if (!scannerStatus) return;
+	scannerStatus.textContent = message;
+	scannerStatus.dataset.tone = tone;
+};
+
+const openAnimalFromQr = (text) => {
+	const code = extractAnimalQrCode(text);
+
+	if (!code) {
+		setScannerStatus('Este código QR no corresponde a un animal de Rincón Ganadero.', 'error');
+
+		return false;
+	}
+
+	setScannerStatus('Código leído. Buscando el animal…', 'success');
+	navigator.vibrate?.(80);
+	const lookupUrl = new URL(qrLookupForm?.action || 'animals/lookup', window.location.href);
+	lookupUrl.searchParams.set('code', code);
+	window.location.assign(lookupUrl.href);
+
+	return true;
+};
 
 const stopQrScanner = () => {
 	qrScannerActive = false;
 	qrScannerControls?.stop();
 	qrScannerControls = null;
 	if (scannerVideo) {
-		scannerVideo.srcObject?.getTracks().forEach((track) => track.stop());
+		scannerVideo.srcObject?.getTracks?.().forEach((track) => track.stop());
 		scannerVideo.srcObject = null;
+	}
+	if (scanQrButton) scanQrButton.disabled = false;
+};
+
+const cameraErrorMessage = (error) => {
+	if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) return 'Este navegador no permite la cámara en vivo en esta conexión. Toma una foto del código QR y se buscará el animal automáticamente.';
+
+	switch (error?.name) {
+		case 'NotAllowedError':
+		case 'SecurityError':
+			return 'Permiso de cámara denegado. Actívalo en la configuración del navegador (ícono del candado) o toma una foto del código.';
+		case 'NotFoundError':
+		case 'OverconstrainedError':
+			return 'No se encontró una cámara en este dispositivo. Escribe el código o toma una foto del QR.';
+		case 'NotReadableError':
+		case 'AbortError':
+			return 'La cámara está siendo usada por otra aplicación. Ciérrala e inténtalo de nuevo.';
+		default:
+			return 'No se pudo abrir la cámara en vivo. Toma una foto del código QR o escribe el código.';
 	}
 };
 
 document.querySelector('[data-qr-scan-close]')?.addEventListener('click', () => {
 	stopQrScanner();
-	if (scanQrButton) scanQrButton.disabled = false;
 	if (scannerPanel) scannerPanel.hidden = true;
 });
 
 scanQrButton?.addEventListener('click', async () => {
 	if (!scannerPanel || !scannerVideo || !scannerStatus) return;
 	scannerPanel.hidden = false;
-	qrScannerActive = true;
-	scannerStatus.textContent = 'Solicitando acceso a la cámara…';
-	scanQrButton.disabled = true;
+	scannerVideo.hidden = false;
+	if (scanQrPhotoButton) scanQrPhotoButton.hidden = true;
 
-	try {
-		const { BrowserQRCodeReader } = await import('@zxing/browser');
-		if (!qrScannerActive) return;
-		const qrScannerReader = new BrowserQRCodeReader();
-		qrScannerControls = await qrScannerReader.decodeFromVideoDevice(undefined, scannerVideo, (result, error) => {
-			if (!qrScannerActive) return;
-			if (result) {
-				let scannedUrl;
-				try {
-					scannedUrl = new URL(result.getText(), window.location.origin);
-				} catch {
-					scannerStatus.textContent = 'El código no contiene una dirección válida de Rincón Ganadero.';
-					return;
-				}
+	// Without live camera (e.g. http on the local network) open the phone camera directly to take a photo.
+	if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+		scannerVideo.hidden = true;
+		setScannerStatus('Toma una foto del código QR; el animal se buscará automáticamente.');
+		if (scanQrPhotoButton) scanQrPhotoButton.hidden = false;
+		scanQrPhotoInput?.click();
 
-				const validPath = /^\/animals\/qr\/[A-Z0-9]{16}$/.test(scannedUrl.pathname);
-
-				if (scannedUrl.origin !== window.location.origin || !validPath) {
-					scannerStatus.textContent = 'El código no pertenece a un animal de Rincón Ganadero.';
-					return;
-				}
-
-				stopQrScanner();
-				window.location.assign(scannedUrl.href);
-			} else if (error && error.name !== 'NotFoundException') {
-				scannerStatus.textContent = 'No fue posible leer el código. Ajusta la cámara e inténtalo de nuevo.';
-			}
-		});
-		if (!qrScannerActive) {
-			stopQrScanner();
-			return;
-		}
-		scannerStatus.textContent = 'Apunta la cámara al código QR del animal.';
-	} catch (error) {
-		scannerStatus.textContent = window.isSecureContext
-			? 'No se pudo acceder a la cámara. Revisa el permiso del navegador o usa la búsqueda manual.'
-			: 'La cámara requiere una conexión segura (HTTPS). Usa la búsqueda manual por código.';
-		stopQrScanner();
+		return;
 	}
 
-	scanQrButton.disabled = false;
+	scanQrButton.disabled = true;
+
+	qrScannerActive = true;
+	setScannerStatus('Solicitando acceso a la cámara…');
+
+	try {
+		const reader = await loadQrReader();
+		if (!qrScannerActive) return;
+
+		const onDecode = (result) => {
+			if (!qrScannerActive || !result) return;
+			if (openAnimalFromQr(result.getText())) stopQrScanner();
+		};
+
+		try {
+			qrScannerControls = await reader.decodeFromConstraints({ audio: false, video: { facingMode: { ideal: 'environment' } } }, scannerVideo, onDecode);
+		} catch (error) {
+			if (error?.name !== 'OverconstrainedError') throw error;
+			qrScannerControls = await reader.decodeFromConstraints({ audio: false, video: true }, scannerVideo, onDecode);
+		}
+
+		if (!qrScannerActive) {
+			stopQrScanner();
+
+			return;
+		}
+
+		setScannerStatus('Apunta la cámara al código QR del animal.');
+		scannerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+	} catch (error) {
+		console.error('No fue posible iniciar el escáner QR.', error);
+		stopQrScanner();
+		scannerVideo.hidden = true;
+		setScannerStatus(cameraErrorMessage(error), 'error');
+		if (scanQrPhotoButton && error?.name !== 'NotFoundError') scanQrPhotoButton.hidden = false;
+	}
 });
+
+scanQrPhotoButton?.addEventListener('click', () => scanQrPhotoInput?.click());
+
+scanQrPhotoInput?.addEventListener('change', async () => {
+	const file = scanQrPhotoInput.files?.[0];
+	if (!file) return;
+
+	stopQrScanner();
+	if (scannerPanel) scannerPanel.hidden = false;
+	if (scannerVideo) scannerVideo.hidden = true;
+	setScannerStatus('Leyendo el código de la foto…');
+	const imageUrl = URL.createObjectURL(file);
+
+	try {
+		const reader = await loadQrReader();
+		const result = await reader.decodeFromImageUrl(imageUrl);
+		if (!openAnimalFromQr(result.getText()) && scanQrPhotoButton) scanQrPhotoButton.hidden = false;
+	} catch {
+		setScannerStatus('No se encontró un código QR en la foto. Tómala más cerca, con buena luz y el código completo.', 'error');
+		if (scanQrPhotoButton) scanQrPhotoButton.hidden = false;
+	} finally {
+		URL.revokeObjectURL(imageUrl);
+		scanQrPhotoInput.value = '';
+	}
+});
+
+qrLookupForm?.addEventListener('submit', (event) => {
+	const input = qrLookupForm.querySelector('[name="code"]');
+	const code = extractAnimalQrCode(input?.value);
+
+	if (input && code) input.value = code;
+	if (!code && input?.value) {
+		event.preventDefault();
+		Swal.fire({ icon: 'warning', title: 'Código no válido', text: 'Escribe los 16 caracteres del código o pega la dirección del QR.', confirmButtonColor: '#183d32' });
+	}
+}, true);
 
 window.addEventListener('pagehide', stopQrScanner);
 

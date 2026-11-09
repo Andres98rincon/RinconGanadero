@@ -74,7 +74,8 @@ Route::middleware(['auth', EnsureAccountIsActive::class])->group(function (): vo
     Route::put('notifications/preferences', [NotificationController::class, 'updatePreferences'])->middleware('can:animals.view')->name('notifications.preferences.update');
     Route::post('notifications/push-subscriptions', [NotificationController::class, 'subscribe'])->middleware('can:animals.view')->name('notifications.subscribe');
     Route::delete('notifications/push-subscriptions', [NotificationController::class, 'unsubscribe'])->middleware('can:animals.view')->name('notifications.unsubscribe');
-    Route::post('offline/sync', [OfflineSyncController::class, 'sync'])->middleware('can:animals.update')->name('offline.sync');
+    Route::get('offline/status', [OfflineSyncController::class, 'status'])->name('offline.status');
+    Route::post('offline/sync', [OfflineSyncController::class, 'sync'])->middleware('throttle:30,1')->name('offline.sync');
 
     Route::resource('farms', FarmController::class)
         ->middlewareFor(['index'], 'can:viewAny,'.Farm::class)

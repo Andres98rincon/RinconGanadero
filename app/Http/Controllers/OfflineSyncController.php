@@ -2,57 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Animal;
-use App\Models\AnimalEvent;
+use App\Services\OfflineSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class OfflineSyncController extends Controller
 {
+    public const MAX_OPERATIONS_PER_REQUEST = 50;
+
+    public function __construct(private OfflineSyncService $offlineSyncService) {}
+
+    /**
+     * Lightweight heartbeat used by the device to confirm real connectivity,
+     * an active session and a fresh CSRF token before sending its queue.
+     */
+    public function status(Request $request): JsonResponse
+    {
+        return response()
+            ->json([
+                'online' => true,
+                'user_id' => $request->user()->id,
+                'csrf_token' => csrf_token(),
+                'server_time' => now()->toIso8601String(),
+            ])
+            ->header('Cache-Control', 'no-store, max-age=0');
+    }
+
     public function sync(Request $request): JsonResponse
     {
-        $operations = $request->validate(['operations' => ['required', 'array', 'max:50'], 'operations.*.id' => ['required', 'uuid'], 'operations.*.type' => ['required', Rule::in(['animal_event'])], 'operations.*.animal_id' => ['required', 'integer'], 'operations.*.payload' => ['required', 'array']])['operations'];
-        $results = [];
+        $operations = $request->validate([
+            'operations' => ['required', 'array', 'max:'.self::MAX_OPERATIONS_PER_REQUEST],
+            'operations.*.id' => ['required', 'uuid', 'distinct'],
+            'operations.*.type' => ['required', Rule::in(OfflineSyncService::TYPES)],
+            'operations.*.animal_id' => ['required', 'integer'],
+            'operations.*.payload' => ['required', 'array'],
+        ])['operations'];
 
-        foreach ($operations as $operation) {
-            $offlineId = $operation['id'];
-            if (AnimalEvent::query()->where('offline_id', $offlineId)->exists()) {
-                $results[] = ['id' => $offlineId, 'status' => 'synced', 'duplicate' => true];
-                continue;
-            }
-
-            try {
-                $animal = Animal::query()->findOrFail($operation['animal_id']);
-                Gate::authorize('update', $animal);
-                $payload = Validator::make($operation['payload'] + ['offline_id' => $offlineId], [
-                    'event_type' => ['required', Rule::in(array_keys(AnimalEventController::TYPES))],
-                    'event_date' => ['required', 'date', 'before_or_equal:today'],
-                    'title' => ['required', 'string', 'max:150'],
-                    'description' => ['nullable', 'string', 'max:10000'],
-                    'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
-                    'cost' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
-                    'due_date' => ['nullable', 'date', 'after_or_equal:event_date'],
-                    'offline_id' => ['required', 'uuid'],
-                ])->validate();
-
-                DB::transaction(function () use ($animal, $payload): void {
-                    $event = $animal->events()->create($payload);
-                    if ($event->weight_kg !== null) $animal->syncCurrentWeightFromEvents(preserveLaterSnapshot: true);
-                });
-                $results[] = ['id' => $offlineId, 'status' => 'synced'];
-            } catch (\Illuminate\Auth\Access\AuthorizationException|\Illuminate\Database\Eloquent\ModelNotFoundException) {
-                $results[] = ['id' => $offlineId, 'status' => 'denied', 'message' => 'No tienes permiso para esta finca o animal.'];
-            } catch (\Illuminate\Validation\ValidationException $exception) {
-                $results[] = ['id' => $offlineId, 'status' => 'error', 'message' => $exception->getMessage(), 'errors' => $exception->errors()];
-            } catch (\Throwable $exception) {
-                report($exception);
-                $results[] = ['id' => $offlineId, 'status' => 'error', 'message' => 'No se pudo sincronizar el registro.'];
-            }
-        }
+        $results = array_map(
+            fn (array $operation): array => $this->offlineSyncService->process($request->user(), $operation),
+            $operations,
+        );
 
         return response()->json(['results' => $results]);
     }

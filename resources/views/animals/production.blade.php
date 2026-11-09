@@ -25,7 +25,7 @@
                 <h2>Registrar producción diaria</h2>
                 <p>Ingresa uno o ambos ordeños. El total se calcula automáticamente.</p>
             </div>
-            <form method="POST" action="{{ route('animals.production.store', $animal) }}" class="production-form">
+            <form method="POST" action="{{ route('animals.production.store', $animal) }}" class="production-form" data-offline-form="milk-production" data-offline-animal-id="{{ $animal->id }}" data-offline-animal-label="{{ $animal->ear_tag }}{{ $animal->name ? ' · '.$animal->name : '' }}">
                 @csrf
                 <div class="field">
                     <label for="record_date">Fecha *</label>

@@ -29,14 +29,19 @@
         <form class="animal-lookup-form" method="GET" action="{{ route('animals.lookup') }}">
             <div class="field">
                 <label for="animal-qr-code">Buscar animal por código</label>
-                <input class="control" id="animal-qr-code" name="code" type="search" minlength="16" maxlength="16" pattern="[A-Za-z0-9]{16}" autocomplete="off" placeholder="Ingresa el código QR" required>
+                <input class="control" id="animal-qr-code" name="code" type="search" maxlength="300" autocomplete="off" autocapitalize="characters" placeholder="Código de 16 caracteres o dirección del QR" required>
             </div>
             <button class="button button-secondary" type="submit">Buscar</button>
             <button class="button button-primary" type="button" data-qr-scan-open>Escanear con cámara</button>
         </form>
         <div class="qr-scanner" data-qr-scanner hidden>
-            <video class="qr-scanner-video" data-qr-video playsinline muted aria-label="Vista de la cámara para escanear el código QR"></video>
+            <div class="qr-scanner-frame">
+                <video class="qr-scanner-video" data-qr-video autoplay playsinline muted aria-label="Vista de la cámara para escanear el código QR"></video>
+                <span class="qr-scanner-target" aria-hidden="true"></span>
+            </div>
             <p data-qr-scanner-status role="status">Apunta la cámara al código QR del animal.</p>
+            <input class="qr-photo-input" type="file" accept="image/*" capture="environment" data-qr-photo-input tabindex="-1" aria-hidden="true">
+            <button class="button button-primary" type="button" data-qr-photo-open hidden>Abrir cámara del celular</button>
             <button class="button button-secondary" type="button" data-qr-scan-close>Detener cámara</button>
         </div>
     </section>

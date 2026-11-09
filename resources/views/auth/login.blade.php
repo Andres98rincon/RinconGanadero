@@ -6,7 +6,7 @@
     <div class="auth-heading">
         <span class="auth-icon" aria-hidden="true">↗</span>
         <span class="eyebrow">Bienvenido de nuevo</span>
-        <h2>Inicia sesión</h2>
+        <b><h2>Inicia sesión</h2></b>
         <p>Ingresa a tu espacio de gestión del hato.</p>
     </div>
 
@@ -44,7 +44,4 @@
             Iniciar sesión con Google
         </a>
     @endif
-
-    <div class="auth-secure-note"><span aria-hidden="true">◆</span> Acceso privado para el equipo autorizado de tu finca.</div>
-    <button class="button button-secondary auth-submit" type="button" data-pwa-install>Instalar aplicación</button>
 @endsection

@@ -27,7 +27,7 @@
             </div>
         @else
             <p class="page-subtitle">Se muestran hasta 50 animales activos. Afina la búsqueda si no encuentras el arete o nombre.</p>
-            <form method="POST" action="{{ route('weights.store') }}">
+            <form method="POST" action="{{ route('weights.store') }}" data-offline-form="weight">
                 @csrf
                 <div class="field-grid">
                     <div class="field field-full">
