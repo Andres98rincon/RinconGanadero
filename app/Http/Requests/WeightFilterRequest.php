@@ -43,7 +43,7 @@ class WeightFilterRequest extends FormRequest
                         fn ($query) => $query->whereIn('farm_id', $this->user()->accessibleFarmIdsQuery()),
                     )),
             ],
-            'species' => ['nullable', Rule::in(array_keys(Animal::SPECIES))],
+            'species' => ['nullable', Rule::in(array_keys(\App\Models\Species::options()))],
             'q' => ['nullable', 'string', 'max:100'],
         ];
     }

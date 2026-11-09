@@ -40,15 +40,40 @@
                         <input class="control" id="address" name="address" value="{{ old('address', $farm->address ?? '') }}" maxlength="255">
                         @error('address')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
+                    @php
+                        $currentProvince = (string) old('province', $farm->province ?? '');
+                        $currentMunicipality = (string) old('municipality', $farm->municipality ?? '');
+                        $currentDepartment = $departments->firstWhere('name', $currentProvince);
+                        $isLegacyProvince = $currentProvince !== '' && ! $currentDepartment;
+                        $isLegacyMunicipality = $currentMunicipality !== '' && ! $currentDepartment?->municipalities->contains('name', $currentMunicipality);
+                    @endphp
                     <div class="field">
-                        <label for="municipality">Municipio</label>
-                        <input class="control" id="municipality" name="municipality" value="{{ old('municipality', $farm->municipality ?? '') }}" maxlength="100">
-                        @error('municipality')<span class="field-error">{{ $message }}</span>@enderror
+                        <label for="province">Departamento</label>
+                        <select class="control" id="province" name="province" data-searchable-select data-placeholder="Selecciona el departamento">
+                            <option value="">Selecciona el departamento</option>
+                            @if ($isLegacyProvince)
+                                <option value="{{ $currentProvince }}" selected>{{ $currentProvince }} (registrado antes)</option>
+                            @endif
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->name }}" @selected($currentProvince === $department->name)>{{ $department->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('province')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="field">
-                        <label for="province">Departamento / provincia</label>
-                        <input class="control" id="province" name="province" value="{{ old('province', $farm->province ?? '') }}" maxlength="100">
-                        @error('province')<span class="field-error">{{ $message }}</span>@enderror
+                        <label for="municipality">Municipio</label>
+                        <select class="control" id="municipality" name="municipality" data-depends-on="#province" data-empty-text="Primero selecciona el departamento" data-searchable-select data-placeholder="Selecciona el municipio">
+                            <option value="">Selecciona el municipio</option>
+                            @if ($isLegacyMunicipality)
+                                <option value="{{ $currentMunicipality }}" data-parent="{{ $currentProvince }}" selected>{{ $currentMunicipality }} (registrado antes)</option>
+                            @endif
+                            @foreach ($departments as $department)
+                                @foreach ($department->municipalities as $municipality)
+                                    <option value="{{ $municipality->name }}" data-parent="{{ $department->name }}" @selected($currentProvince === $department->name && $currentMunicipality === $municipality->name)>{{ $municipality->name }}</option>
+                                @endforeach
+                            @endforeach
+                        </select>
+                        @error('municipality')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="field">
                         <label for="latitude">Latitud</label>

@@ -6,7 +6,8 @@ use Illuminate\Database\Seeder;
 
 /**
  * Datos base para dejar el sistema listo para trabajar (seguro también en producción):
- * roles y permisos, catálogo de razas y el superadministrador definido en el .env.
+ * roles y permisos, especies, razas, departamentos y municipios de Colombia y el
+ * superadministrador definido en el .env.
  * Se puede ejecutar varias veces sin duplicar información.
  *
  *   php artisan db:seed --class=SystemSeeder
@@ -17,7 +18,9 @@ class SystemSeeder extends Seeder
     {
         $this->call([
             RolePermissionSeeder::class,
+            SpeciesSeeder::class,
             BreedSeeder::class,
+            ColombiaLocationsSeeder::class,
         ]);
 
         if (filled(config('services.super_admin.password'))) {

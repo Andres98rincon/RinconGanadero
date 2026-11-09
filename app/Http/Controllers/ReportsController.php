@@ -488,7 +488,7 @@ class ReportsController extends Controller
             'inventory' => [
                 'ear_tag' => (string) $row->ear_tag,
                 'name' => $row->name ?: 'Sin nombre',
-                'species' => Animal::SPECIES[$row->species] ?? 'Otro',
+                'species' => \App\Models\Species::label($row->species),
                 'sex' => ['female' => 'Hembra', 'male' => 'Macho'][$row->sex] ?? 'Sin especificar',
                 'farm_name' => $row->farm_name,
                 'current_weight_kg' => $row->current_weight_kg !== null ? $this->formatNumber($row->current_weight_kg) : '—',

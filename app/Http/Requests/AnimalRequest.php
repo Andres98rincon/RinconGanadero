@@ -28,7 +28,7 @@ class AnimalRequest extends FormRequest
         return [
             'ear_tag' => ['required', 'string', 'max:40', Rule::unique('animals', 'ear_tag')->ignore($this->route('animal'))],
             'name' => ['nullable', 'string', 'max:100'],
-            'species' => ['required', Rule::in(array_keys(Animal::SPECIES))],
+            'species' => ['required', Rule::in(array_keys(\App\Models\Species::options()))],
             'breed_id' => [
                 'nullable',
                 Rule::exists('breeds', 'id')->where(fn ($query) => $query->where('species', $this->input('species'))),

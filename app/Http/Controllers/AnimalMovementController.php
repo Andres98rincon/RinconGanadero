@@ -114,7 +114,7 @@ class AnimalMovementController extends Controller
             'types' => AnimalMovement::TYPES,
             'exitReasons' => AnimalMovement::EXIT_REASONS,
             'paymentMethods' => FinancialTransaction::PAYMENT_METHODS,
-            'speciesOptions' => Animal::SPECIES,
+            'speciesOptions' => \App\Models\Species::options(),
         ]);
     }
 

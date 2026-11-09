@@ -40,17 +40,17 @@
                         <select class="control" id="species" name="species" data-species-select data-searchable-select data-placeholder="Seleccionar especie" required>
                             <option value="">Seleccionar especie</option>
                             @foreach ($speciesOptions as $value => $label)
-                                <option value="{{ $value }}" @selected(old('species', $animal->species ?? 'bovine') === $value)>{{ $label }}</option>
+                                <option value="{{ $value }}" @selected(old('species', $animal->species ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                         @error('species')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div class="field">
                         <label for="breed_id">Raza</label>
-                        <select class="control" id="breed_id" name="breed_id" data-species-options data-searchable-select data-placeholder="Buscar raza">
+                        <select class="control" id="breed_id" name="breed_id" data-depends-on="#species" data-empty-text="Primero selecciona una especie" data-searchable-select data-placeholder="Buscar raza">
                             <option value="">Sin especificar</option>
                             @foreach ($breeds as $breed)
-                                <option value="{{ $breed->id }}" data-species="{{ $breed->species }}" @selected((string) old('breed_id', $animal->breed_id ?? '') === (string) $breed->id)>{{ $breed->name }} · {{ $speciesOptions[$breed->species] ?? 'Otro' }}</option>
+                                <option value="{{ $breed->id }}" data-parent="{{ $breed->species }}" @selected((string) old('breed_id', $animal->breed_id ?? '') === (string) $breed->id)>{{ $breed->name }}</option>
                             @endforeach
                         </select>
                         @error('breed_id')<span class="field-error">{{ $message }}</span>@enderror

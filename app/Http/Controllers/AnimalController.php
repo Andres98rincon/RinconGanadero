@@ -60,7 +60,7 @@ class AnimalController extends Controller
             'animals' => $animals,
             'filters' => $filters,
             'stats' => $stats,
-            'speciesOptions' => Animal::SPECIES,
+            'speciesOptions' => \App\Models\Species::options(),
             'statusOptions' => Animal::STATUSES,
             'farms' => Farm::query()->orderBy('name')->get(['id', 'name', 'code', 'status']),
         ]);
@@ -305,7 +305,7 @@ class AnimalController extends Controller
             'selectedFarmId' => $selectedFarmId,
             'breeds' => Breed::query()->orderBy('species')->orderBy('name')->get(),
             'farms' => Farm::query()->orderBy('name')->get(['id', 'name', 'code', 'status']),
-            'speciesOptions' => Animal::SPECIES,
+            'speciesOptions' => \App\Models\Species::options(),
             'parentAnimals' => Animal::query()
                 ->when($animal, fn ($query) => $query->whereKeyNot($animal->getKey()))
                 ->orderBy('ear_tag')
@@ -320,7 +320,7 @@ class AnimalController extends Controller
     {
         return $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
-            'species' => ['nullable', Rule::in(array_keys(Animal::SPECIES))],
+            'species' => ['nullable', Rule::in(array_keys(\App\Models\Species::options()))],
             'status' => ['nullable', Rule::in(array_keys(Animal::STATUSES))],
             'farm_id' => ['nullable', 'integer', Rule::exists('farms', 'id')->where(fn ($query) => $query
                 ->whereNull('deleted_at')

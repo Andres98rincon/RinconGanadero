@@ -54,7 +54,7 @@ class FarmController extends Controller
 
     public function create(): View
     {
-        return view('farms.form', ['farm' => null, 'statusOptions' => Farm::STATUSES]);
+        return view('farms.form', ['farm' => null, 'statusOptions' => Farm::STATUSES, 'departments' => $this->departments()]);
     }
 
     public function store(FarmRequest $request): RedirectResponse
@@ -103,7 +103,7 @@ class FarmController extends Controller
 
     public function edit(Farm $farm): View
     {
-        return view('farms.form', ['farm' => $farm, 'statusOptions' => Farm::STATUSES]);
+        return view('farms.form', ['farm' => $farm, 'statusOptions' => Farm::STATUSES, 'departments' => $this->departments()]);
     }
 
     public function update(FarmRequest $request, Farm $farm): RedirectResponse
@@ -124,5 +124,18 @@ class FarmController extends Controller
         $farm->delete();
 
         return redirect()->route('farms.index')->with('success', 'Finca archivada correctamente.');
+    }
+
+    /**
+     * Departamentos de Colombia con sus municipios para los selects dependientes.
+     *
+     * @return \Illuminate\Support\Collection<int, \App\Models\Department>
+     */
+    private function departments(): \Illuminate\Support\Collection
+    {
+        return \App\Models\Department::query()
+            ->with('municipalities:id,department_id,name')
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 }

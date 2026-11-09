@@ -51,6 +51,7 @@ class AccessControl
         'animals.export' => 'Exportar animales',
         'activity-log.view' => 'Consultar bitácora de auditoría',
         'backups.manage' => 'Administrar copias de seguridad',
+        'catalogs.manage' => 'Administrar especies y razas',
     ];
 
     public const ADMIN_PERMISSIONS = [
@@ -66,6 +67,7 @@ class AccessControl
         'reports.view', 'reports.export',
         'users.view', 'users.create', 'users.update', 'users.delete',
         'animals.import', 'animals.export', 'activity-log.view',
+        'catalogs.manage',
     ];
 
     public const OPERATOR_PERMISSIONS = [

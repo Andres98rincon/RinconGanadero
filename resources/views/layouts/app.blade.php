@@ -166,6 +166,11 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 3 8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="m9 12 2 2 4-4"/></svg> Roles
                 </a>
                 @endcan
+                @can('catalogs.manage')
+                <a class="nav-link {{ request()->routeIs('admin.species.*', 'admin.breeds.*') ? 'active' : '' }}" href="{{ route('admin.species.index') }}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16M4 12h16M4 19h10"/><circle cx="19" cy="19" r="2"/></svg> Especies y razas
+                </a>
+                @endcan
                 @can('permissions.manage')
                 <a class="nav-link {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}" href="{{ route('admin.permissions.index') }}">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 14a5 5 0 1 1 4.9-6H22v4h-3v3h-3v-3h-4.1A5 5 0 0 1 7 14Z"/><circle cx="7" cy="9" r="1"/></svg> Permisos

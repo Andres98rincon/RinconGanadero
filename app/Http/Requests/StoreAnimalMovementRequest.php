@@ -48,7 +48,7 @@ class StoreAnimalMovementRequest extends FormRequest
             'species' => [
                 Rule::requiredIf($purchase),
                 Rule::prohibitedIf(! $purchase),
-                Rule::in(array_keys(Animal::SPECIES)),
+                Rule::in(array_keys(\App\Models\Species::options())),
             ],
             'breed_id' => [
                 Rule::prohibitedIf(! $purchase),

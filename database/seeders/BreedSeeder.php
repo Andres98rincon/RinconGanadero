@@ -6,7 +6,8 @@ use App\Models\Breed;
 use Illuminate\Database\Seeder;
 
 /**
- * Catálogo de razas. Es seguro ejecutarlo varias veces: actualiza sin duplicar.
+ * Catálogo de razas relacionadas con su especie. Es seguro ejecutarlo varias veces:
+ * crea solo las razas que faltan, sin duplicar ni sobrescribir.
  */
 class BreedSeeder extends Seeder
 {
@@ -82,6 +83,8 @@ class BreedSeeder extends Seeder
 
     public function run(): void
     {
+        $this->call(SpeciesSeeder::class);
+
         foreach (self::LEGACY_NAMES as [$species, $oldName, $newName]) {
             if (! Breed::query()->where('species', $species)->where('name', $newName)->exists()) {
                 Breed::query()->where('species', $species)->where('name', $oldName)->update(['name' => $newName]);
@@ -90,7 +93,8 @@ class BreedSeeder extends Seeder
 
         foreach (self::BREEDS as $species => $breeds) {
             foreach ($breeds as [$name, $origin, $description]) {
-                Breed::query()->updateOrCreate(
+                // firstOrCreate: no sobrescribe los cambios hechos desde el CRUD de razas.
+                Breed::query()->firstOrCreate(
                     ['species' => $species, 'name' => $name],
                     ['origin' => $origin, 'description' => $description],
                 );

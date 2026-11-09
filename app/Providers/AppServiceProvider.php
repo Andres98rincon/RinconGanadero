@@ -13,6 +13,7 @@ use App\Policies\PermissionPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -34,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::defaultView('vendor.pagination.rincon');
+
         Gate::before(fn (User $user): ?bool => $user->hasRole('superadministrador') ? true : null);
         Event::listen(Logout::class, function (Logout $event): void {
             if ($event->user instanceof User) {

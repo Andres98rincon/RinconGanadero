@@ -68,7 +68,7 @@ class DashboardController extends Controller
             ->orderByDesc('animal_count')
             ->get()
             ->map(fn (object $row): array => [
-                'label' => Animal::SPECIES[$row->species] ?? 'Otro',
+                'label' => \App\Models\Species::label($row->species),
                 'count' => (int) $row->animal_count,
                 'percentage' => $activeAnimalCount > 0
                     ? round((int) $row->animal_count / $activeAnimalCount * 100)

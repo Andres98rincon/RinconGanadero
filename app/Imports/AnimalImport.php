@@ -122,7 +122,7 @@ class AnimalImport implements OnEachRow, WithChunkReading, WithHeadingRow
         $validator = Validator::make($data, [
             'ear_tag' => ['required', 'string', 'max:40', 'unique:animals,ear_tag'],
             'name' => ['nullable', 'string', 'max:100'],
-            'species' => ['required', Rule::in(array_keys(Animal::SPECIES))],
+            'species' => ['required', Rule::in(array_keys(\App\Models\Species::options()))],
             'breed_name' => ['nullable', 'string', 'max:100'],
             'sex' => ['required', Rule::in(['female', 'male', 'unknown'])],
             'identification_method' => ['required', Rule::in(['visual', 'rfid', 'tattoo', 'brand', 'other'])],

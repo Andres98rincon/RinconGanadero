@@ -121,7 +121,7 @@ class WeightController extends Controller
             'records' => $records,
             'stats' => $stats,
             'farms' => Farm::query()->orderBy('name')->get(['id', 'name', 'code']),
-            'speciesOptions' => Animal::SPECIES,
+            'speciesOptions' => \App\Models\Species::options(),
         ]);
     }
 

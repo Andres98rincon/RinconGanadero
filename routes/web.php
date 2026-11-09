@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\BreedController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SpeciesController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AnimalController;
 use App\Http\Controllers\AssistantController;
@@ -205,6 +207,16 @@ Route::middleware(['auth', EnsureAccountIsActive::class])->group(function (): vo
     Route::delete('animals/{animal}/events/{event}', [AnimalEventController::class, 'destroy'])
         ->middleware('can:update,animal')
         ->name('animals.events.destroy');
+
+    Route::resource('admin/species', SpeciesController::class)
+        ->except(['show'])
+        ->parameters(['species' => 'species'])
+        ->names('admin.species')
+        ->middleware('can:catalogs.manage');
+    Route::resource('admin/breeds', BreedController::class)
+        ->except(['show'])
+        ->names('admin.breeds')
+        ->middleware('can:catalogs.manage');
 
     Route::resource('admin/users', UserController::class)
         ->except(['show'])

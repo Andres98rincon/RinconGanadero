@@ -7,7 +7,7 @@
         <div>
             <div class="eyebrow"><a href="{{ route('animals.index') }}">Inventario</a> / Ficha individual</div>
             <h1>{{ $animal->name ?: $animal->ear_tag }}</h1>
-            <p class="page-subtitle">Identificación {{ $animal->ear_tag }} · {{ \App\Models\Animal::SPECIES[$animal->species] ?? 'Otro' }} · {{ $animal->breed?->name ?? 'Raza sin especificar' }}</p>
+            <p class="page-subtitle">Identificación {{ $animal->ear_tag }} · {{ \App\Models\Species::label($animal->species) }} · {{ $animal->breed?->name ?? 'Raza sin especificar' }}</p>
         </div>
 
     </div>

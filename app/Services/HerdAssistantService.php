@@ -233,7 +233,7 @@ class HerdAssistantService
         $name = $animal->name ? "{$animal->ear_tag} · {$animal->name}" : $animal->ear_tag;
         $sexLabel = ['female' => 'Hembra', 'male' => 'Macho'][$animal->sex] ?? 'Sin definir';
         $items = [
-            ['label' => 'Especie', 'value' => Animal::SPECIES[$animal->species] ?? $animal->species],
+            ['label' => 'Especie', 'value' => \App\Models\Species::label($animal->species)],
             ['label' => 'Sexo', 'value' => $sexLabel],
             ['label' => 'Estado', 'value' => Animal::STATUSES[$animal->status] ?? $animal->status],
         ];
@@ -750,7 +750,7 @@ class HerdAssistantService
             return $sex === 'female' ? 'vacas y hembras bovinas' : ($sex === 'male' ? 'toros y machos bovinos' : 'bovinos');
         }
         if ($species) {
-            return mb_strtolower(Animal::SPECIES[$species]).'s'.($sex === 'female' ? ' hembras' : ($sex === 'male' ? ' machos' : ''));
+            return mb_strtolower(\App\Models\Species::label($species)).'s'.($sex === 'female' ? ' hembras' : ($sex === 'male' ? ' machos' : ''));
         }
 
         return $sex === 'female' ? 'hembras' : ($sex === 'male' ? 'machos' : 'animales activos');

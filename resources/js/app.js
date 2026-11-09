@@ -539,6 +539,54 @@ document.querySelectorAll('[data-export]').forEach((link) => {
 	});
 });
 
+/**
+ * Selects dependientes (especie → raza, departamento → municipio).
+ * El hijo usa data-depends-on="#padre" y cada opción data-parent con el valor del padre.
+ * Queda vacío y deshabilitado hasta elegir el padre; si el padre cambia, se limpia.
+ */
+const initializeDependentSelects = (root = document) => {
+	root.querySelectorAll('select[data-depends-on]').forEach((child) => {
+		const parent = document.querySelector(child.dataset.dependsOn);
+		if (!parent || child.dataset.dependentReady === 'true') return;
+		child.dataset.dependentReady = 'true';
+
+		const allOptions = Array.from(child.options, (option) => option.cloneNode(true));
+		const placeholder = allOptions.find((option) => option.value === '') || new Option('', '');
+		const placeholderText = placeholder.textContent;
+		const searchPlaceholder = child.dataset.placeholder || placeholderText;
+		const emptyText = child.dataset.emptyText || placeholderText;
+
+		const render = (keepValue) => {
+			const parentValue = parent.value;
+			const currentValue = keepValue ? child.value : '';
+			const options = parentValue
+				? allOptions.filter((option) => option.value !== '' && option.dataset.parent === parentValue)
+				: [];
+			const first = placeholder.cloneNode(true);
+			first.textContent = parentValue ? placeholderText : emptyText;
+
+			child.replaceChildren(first, ...options.map((option) => option.cloneNode(true)));
+			child.value = options.some((option) => option.value === currentValue) ? currentValue : '';
+			child.disabled = !parentValue;
+
+			if ($(child).hasClass('select2-hidden-accessible')) {
+				child.dataset.placeholder = parentValue ? searchPlaceholder : emptyText;
+				$(child).select2('destroy');
+				initializeSearchSelects(child.parentElement);
+			}
+
+			$(child).trigger('change');
+		};
+
+		// jQuery recibe tanto el change nativo como el que dispara select2.
+		$(parent).on('change', () => render(false));
+		render(true);
+	});
+};
+
+initializeDependentSelects();
+
+// Madre y padre: solo animales de la especie elegida (opciones sin especie siempre visibles).
 const speciesSelect = document.querySelector('[data-species-select]');
 
 if (speciesSelect) {
@@ -563,7 +611,7 @@ if (speciesSelect) {
 		});
 	};
 
-	speciesSelect.addEventListener('change', filterOptions);
+	$(speciesSelect).on('change', filterOptions);
 	filterOptions();
 }
 

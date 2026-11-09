@@ -102,7 +102,7 @@
                     @foreach ($animals as $animal)
                         <tr>
                             <td><a class="animal-link" href="{{ route('animals.show', $animal) }}">{{ $animal->ear_tag }}</a><span class="animal-sub">{{ $animal->name ?: 'Sin nombre' }}</span></td>
-                            <td>{{ \App\Models\Animal::SPECIES[$animal->species] ?? 'Otro' }}<span class="animal-sub">{{ $animal->breed?->name ?? 'Raza sin especificar' }}</span></td>
+                            <td>{{ \App\Models\Species::label($animal->species) }}<span class="animal-sub">{{ $animal->breed?->name ?? 'Raza sin especificar' }}</span></td>
                             <td>{{ ['female' => 'Hembra', 'male' => 'Macho', 'unknown' => 'Sin definir'][$animal->sex] ?? 'Sin definir' }}</td>
                             <td>{{ $animal->paddock?->name ?? ($animal->location ?: 'Sin asignar') }}</td>
                             <td><span class="tag {{ $animal->status === 'active' ? 'tag-active' : 'tag-muted' }}">{{ \App\Models\Animal::STATUSES[$animal->status] ?? $animal->status }}</span></td>
