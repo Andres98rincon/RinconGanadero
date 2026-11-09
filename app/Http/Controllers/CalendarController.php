@@ -134,8 +134,12 @@ class CalendarController extends Controller
     public function storeReminder(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'farm_id' => ['required', 'integer', 'exists:farms,id'],
-            'animal_id' => ['nullable', 'integer', 'exists:animals,id'],
+            'farm_id' => ['required', 'integer', Rule::exists('farms', 'id')->where(fn ($query) => $query
+                ->whereNull('deleted_at')
+                ->whereIn('id', $request->user()->accessibleFarmIdsQuery()))],
+            'animal_id' => ['nullable', 'integer', Rule::exists('animals', 'id')->where(fn ($query) => $query
+                ->whereNull('deleted_at')
+                ->where('farm_id', $request->integer('farm_id')))],
             'title' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:5000'],
             'event_date' => ['required', 'date'],

@@ -39,7 +39,7 @@ class AnimalExport implements FromQuery, WithHeadings, WithMapping
      */
     public function map(mixed $animal): array
     {
-        return [
+        return array_map(fn (mixed $value): mixed => self::protectSpreadsheetFormula($value), [
             $animal->ear_tag,
             $animal->name,
             $animal->species,
@@ -68,7 +68,17 @@ class AnimalExport implements FromQuery, WithHeadings, WithMapping
             $animal->last_weighed_at?->format('Y-m-d'),
             $animal->health_notes,
             $animal->notes,
-        ];
+        ]);
+    }
+
+    /**
+     * Prevents spreadsheet formula injection: text starting with = + - @ is executed by Excel.
+     */
+    public static function protectSpreadsheetFormula(mixed $value): mixed
+    {
+        return is_string($value) && preg_match('/^[\x00-\x20]*[=+\-@]/', $value) === 1
+            ? "'".$value
+            : $value;
     }
 
     public function headings(): array

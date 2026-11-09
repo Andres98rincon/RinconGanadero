@@ -4,10 +4,9 @@
 
 @section('content')
     <div class="auth-heading">
-        <span class="auth-icon" aria-hidden="true">↗</span>
         <span class="eyebrow">Bienvenido de nuevo</span>
-        <b><h2>Inicia sesión</h2></b>
-        <p>Ingresa a tu espacio de gestión del hato.</p>
+        <h2>Inicia sesión</h2>
+        <p>Ingresa tus datos para administrar tu hato.</p>
     </div>
 
     @if (session('status'))

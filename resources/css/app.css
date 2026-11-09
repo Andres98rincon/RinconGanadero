@@ -1196,3 +1196,91 @@ html[data-theme="dark"] .mobile-tabbar { border-top-color: #30463c; background: 
 html[data-theme="dark"] [data-qr-scanner-status][data-tone="error"] { color: #f0aaa0; }
 html[data-theme="dark"] [data-qr-scanner-status][data-tone="success"] { color: #9fdcb1; }
 @media (max-width: 560px) { .animal-lookup-form .button, .qr-scanner .button { flex: 1 1 100%; justify-content: center; } }
+
+/* ==========================================================================
+   Experiencia de app: animaciones, microinteracciones y diseño responsive.
+   ========================================================================== */
+
+/* Barra de progreso al navegar o enviar formularios */
+.nav-progress { position: fixed; top: 0; left: 0; z-index: 2000; width: 100%; height: 3px; pointer-events: none; opacity: 0; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, #3f8b65, #e9b779, #d96b43); box-shadow: 0 0 10px rgb(233 183 121 / 60%); }
+.nav-progress.is-active { opacity: 1; animation: nav-progress 8s cubic-bezier(.08, .82, .17, 1) forwards; }
+@keyframes nav-progress { 0% { transform: scaleX(0); } 10% { transform: scaleX(.35); } 40% { transform: scaleX(.7); } 100% { transform: scaleX(.94); } }
+
+/* Entrada de cada página */
+.page-head { animation: ui-fade-up .55s cubic-bezier(.16, 1, .3, 1) both; }
+.flash { animation: ui-slide-in .45s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes ui-fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes ui-slide-in { from { opacity: 0; transform: translateY(-10px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* Aparición progresiva de tarjetas y paneles al hacer scroll (la clase la pone app.js) */
+.ui-reveal { opacity: 0; transform: translateY(16px); transition: opacity .55s cubic-bezier(.16, 1, .3, 1), transform .55s cubic-bezier(.16, 1, .3, 1); transition-delay: var(--reveal-delay, 0ms); }
+.ui-reveal.is-visible { opacity: 1; transform: none; }
+
+/* Microinteracciones */
+.button:active { transform: translateY(1px) scale(.985); }
+.button:focus-visible, .control:focus-visible, a:focus-visible, button:focus-visible { outline: 3px solid rgb(63 139 101 / 35%); outline-offset: 2px; }
+.stat, .dashboard-kpi, .form-panel, .detail-panel, .history-panel, .side-panel { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+@media (hover: hover) {
+    .stat:hover, .dashboard-kpi:hover { transform: translateY(-3px); box-shadow: 0 14px 28px -14px rgb(23 57 47 / 35%); }
+    .data-table tbody tr { transition: background .15s ease; }
+    .data-table tbody tr:hover td { background: #f1f7ef; }
+}
+.control { transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.control:focus { box-shadow: 0 0 0 4px rgb(63 139 101 / 13%); }
+.table-wrap { position: relative; scroll-behavior: smooth; }
+
+/* Celular: objetivos táctiles cómodos y sin zoom automático en iOS */
+@media (max-width: 760px) {
+    .button { min-height: 46px; padding: 0 16px; font-size: 13px; }
+    .control, select.control, textarea.control { min-height: 46px; font-size: 16px; }
+    .select2-container .select2-selection--single { min-height: 46px; }
+    .page-head h1 { font-size: 24px; line-height: 1.2; }
+
+    /* Tablas convertidas en tarjetas apiladas (app.js agrega data-label a cada celda) */
+    .data-table.is-stackable, .data-table.is-stackable tbody, .data-table.is-stackable tr, .data-table.is-stackable td { display: block; width: 100%; box-sizing: border-box; }
+    .data-table.is-stackable { min-width: 0 !important; white-space: normal; }
+    .data-table.is-stackable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .table-wrap:has(.data-table.is-stackable) { overflow: visible; border: 0; background: transparent; box-shadow: none; }
+    .data-table.is-stackable tbody { display: grid; gap: 10px; }
+    .data-table.is-stackable tr { padding: 6px 14px; border: 1px solid #e0e8df; border-radius: 14px; background: var(--paper, #fff); box-shadow: 0 6px 16px -10px rgb(23 57 47 / 30%); }
+    .data-table.is-stackable td { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 40px; padding: 8px 0; border: 0; border-bottom: 1px dashed #e7ede6; background: transparent !important; text-align: right; overflow-wrap: anywhere; }
+    .data-table.is-stackable td:last-child { border-bottom: 0; }
+    .data-table.is-stackable td::before { flex: 0 0 auto; max-width: 45%; color: #748078; content: attr(data-label); font-size: 10.5px; font-weight: 700; letter-spacing: .3px; text-align: left; text-transform: uppercase; }
+    .data-table.is-stackable td[data-label=""]::before { display: none; }
+    .data-table.is-stackable td[data-label=""] { justify-content: flex-end; }
+    .data-table.is-stackable td[colspan] { justify-content: center; text-align: center; }
+    .data-table.is-stackable td[colspan]::before { display: none; }
+    .data-table.is-stackable td > :is(.table-actions, .action-menu, form) { margin-left: auto; }
+}
+html[data-theme="dark"] .data-table.is-stackable tr { border-color: #30463c; background: #17251f; }
+html[data-theme="dark"] .data-table.is-stackable td { border-bottom-color: #2a3d34; }
+html[data-theme="dark"] .data-table.is-stackable td::before { color: #aabbb0; }
+html[data-theme="dark"] .data-table tbody tr:hover td { background: #1d3028; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ui-reveal { opacity: 1; transform: none; transition: none; }
+    .page-head, .flash, .nav-progress.is-active { animation: none; }
+}
+
+/* Cuenta dentro del menú "Más" en celular; la barra superior queda limpia */
+.mobile-account { display: none; }
+@media (max-width: 760px) {
+    .topbar { position: sticky; top: 0; z-index: 50; display: flex; min-height: 56px; height: auto; align-items: center; justify-content: space-between; gap: 10px; padding: calc(8px + env(safe-area-inset-top)) 14px 8px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .topbar-title { flex: 1; min-width: 0; font-size: 12px; }
+    .topbar-account { flex-wrap: nowrap; gap: 8px; }
+    .topbar-account > .language-control, .topbar-account > .theme-control, .topbar-account > form[data-logout-form], .topbar-profile .topbar-status { display: none !important; }
+    .topbar-profile { order: 2; }
+    .mobile-account { display: grid; gap: 12px; margin: 0 0 16px; padding: 14px; border: 1px solid rgb(255 255 255 / 12%); border-radius: 14px; background: rgb(255 255 255 / 6%); }
+    .mobile-account-profile { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
+    .mobile-account-profile .topbar-avatar { width: 40px; height: 40px; }
+    .mobile-account-profile strong { display: block; font-size: 14px; }
+    .mobile-account-profile small { display: block; color: #b9cdc1; font-size: 11px; }
+    .mobile-account-controls { display: flex; align-items: center; gap: 8px; }
+    .mobile-account-controls select { height: 36px; padding: 0 8px; border: 1px solid rgb(255 255 255 / 18%); border-radius: 9px; background: rgb(255 255 255 / 8%); color: #fff; font: inherit; font-size: 13px; }
+    .mobile-account-controls select option { color: #1d2b24; }
+    .mobile-account-controls .theme-choices { display: inline-flex; gap: 4px; }
+    .mobile-account-controls .theme-choices button { width: 36px; height: 36px; border: 1px solid rgb(255 255 255 / 18%); border-radius: 9px; background: rgb(255 255 255 / 8%); color: #fff; cursor: pointer; }
+    .mobile-account-controls .theme-choices button.is-selected { border-color: #edb979; background: rgb(237 185 121 / 20%); }
+    .mobile-account-controls form[data-logout-form] { margin-left: auto; }
+    .mobile-account-logout { height: 36px; padding: 0 12px; white-space: nowrap; border: 1px solid rgb(240 170 160 / 45%); border-radius: 9px; background: rgb(196 91 78 / 18%); color: #ffd9d3; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+}

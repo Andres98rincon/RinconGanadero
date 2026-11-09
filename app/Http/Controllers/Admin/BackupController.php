@@ -57,7 +57,7 @@ class BackupController extends Controller
     public function download(Config $config, string $backupId): StreamedResponse
     {
         $this->authorizeSuperAdministrator();
-        $backup = $this->backups($config)->firstWhere('id', $backupId);
+        $backup = collect($this->backups($config))->firstWhere('id', $backupId)['backup'] ?? null;
         abort_unless($backup instanceof Backup, 404);
 
         $stream = $backup->stream();
@@ -72,7 +72,7 @@ class BackupController extends Controller
     }
 
     /**
-     * @return list<array{id: string, disk: string, file: string, date: Carbon, size: float}>
+     * @return list<array{id: string, disk: string, file: string, date: Carbon, size: float, backup: Backup}>
      */
     private function backups(Config $config): array
     {
@@ -83,6 +83,7 @@ class BackupController extends Controller
                 'file' => basename($backup->path()),
                 'date' => $backup->date(),
                 'size' => $backup->sizeInBytes(),
+                'backup' => $backup,
             ]))
             ->sortByDesc(fn (array $backup): int => $backup['date']->timestamp)
             ->values()

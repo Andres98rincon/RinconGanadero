@@ -98,19 +98,19 @@
 
     <form class="filter-bar" method="GET" action="{{ route('animals.index') }}">
         <input class="control filter-search" type="search" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Buscar por arete, nombre o microchip" aria-label="Buscar animales">
-        <select class="filter-control" name="species" aria-label="Filtrar por especie" data-select2 data-placeholder="Todas las especies" data-allow-clear="true">
+        <select class="filter-control" name="species" aria-label="Filtrar por especie" data-searchable-select data-placeholder="Todas las especies" data-allow-clear="true">
             <option value="">Todas las especies</option>
             @foreach ($speciesOptions as $value => $label)
                 <option value="{{ $value }}" @selected(($filters['species'] ?? '') === $value)>{{ $label }}</option>
             @endforeach
         </select>
-        <select class="filter-control" name="farm_id" aria-label="Filtrar por finca" data-select2 data-placeholder="Todas las fincas" data-allow-clear="true">
+        <select class="filter-control" name="farm_id" aria-label="Filtrar por finca" data-searchable-select data-placeholder="Todas las fincas" data-allow-clear="true">
             <option value="">Todas las fincas</option>
             @foreach ($farms as $farm)
                 <option value="{{ $farm->id }}" @selected((string) ($filters['farm_id'] ?? '') === (string) $farm->id)>{{ $farm->name }} · {{ $farm->code }}</option>
             @endforeach
         </select>
-        <select class="filter-control" name="status" aria-label="Filtrar por estado" data-select2 data-placeholder="Todos los estados" data-allow-clear="true">
+        <select class="filter-control" name="status" aria-label="Filtrar por estado" data-searchable-select data-placeholder="Todos los estados" data-allow-clear="true">
             <option value="">Todos los estados</option>
             @foreach ($statusOptions as $value => $label)
                 <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>

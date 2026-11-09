@@ -9,6 +9,21 @@ use Spatie\Permission\Models\Role;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Stops the suite before RefreshDatabase runs when a cached configuration
+     * (php artisan config:cache / optimize) would point tests at the real database.
+     */
+    public function createApplication()
+    {
+        $app = parent::createApplication();
+
+        if ($app->configurationIsCached() || $app['config']->get('app.env') !== 'testing') {
+            throw new \RuntimeException('La configuración está en caché y las pruebas usarían la base de datos real. Ejecuta "php artisan optimize:clear" antes de "php artisan test".');
+        }
+
+        return $app;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

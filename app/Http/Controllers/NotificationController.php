@@ -32,9 +32,41 @@ class NotificationController extends Controller
 
     public function subscribe(Request $request): JsonResponse
     {
-        $data = $request->validate(['endpoint' => ['required', 'url', 'max:2000'], 'keys' => ['nullable', 'array'], 'keys.p256dh' => ['nullable', 'string'], 'keys.auth' => ['nullable', 'string'], 'contentEncoding' => ['nullable', 'string', 'max:32']]);
+        $data = $request->validate([
+            'endpoint' => ['required', 'url:https', 'max:2000', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (! self::isTrustedPushEndpoint((string) $value)) {
+                    $fail('El servicio de notificaciones del navegador no es válido.');
+                }
+            }],
+            'keys' => ['required', 'array'],
+            'keys.p256dh' => ['required', 'string', 'max:255'],
+            'keys.auth' => ['required', 'string', 'max:255'],
+            'contentEncoding' => ['nullable', Rule::in(['aesgcm', 'aes128gcm'])],
+        ]);
         $subscription = PushSubscription::query()->updateOrCreate(['user_id' => $request->user()->id, 'endpoint' => $data['endpoint']], ['public_key' => data_get($data, 'keys.p256dh'), 'auth_token' => data_get($data, 'keys.auth'), 'content_encoding' => $data['contentEncoding'] ?? null, 'enabled' => true, 'last_used_at' => now()]);
         return response()->json(['ok' => true, 'id' => $subscription->id]);
+    }
+
+    /**
+     * Push endpoints must belong to a browser push service. Any other URL would let a user make
+     * the server send requests to arbitrary hosts (SSRF), including internal network addresses.
+     */
+    public static function isTrustedPushEndpoint(string $endpoint): bool
+    {
+        $parts = parse_url($endpoint);
+        $host = strtolower($parts['host'] ?? '');
+
+        if (($parts['scheme'] ?? '') !== 'https' || $host === '' || isset($parts['user']) || isset($parts['port'])) {
+            return false;
+        }
+
+        foreach (['fcm.googleapis.com', 'android.googleapis.com', 'updates.push.services.mozilla.com', 'push.services.mozilla.com', 'notify.windows.com', 'push.apple.com'] as $trustedHost) {
+            if ($host === $trustedHost || str_ends_with($host, '.'.$trustedHost)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function unsubscribe(Request $request): JsonResponse

@@ -15,7 +15,7 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="16x16 32x32 48x48" type="image/x-icon">
     <link rel="icon" href="{{ asset('images/rincon-ganadero.png') }}" type="image/png">
     <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <script>
         (() => {
             const stored = localStorage.getItem('rincon-ganadero-theme');
@@ -56,6 +56,33 @@
                     <span class="brand-caption">Cuaderno de campo</span>
                 </span>
             </a>
+            <div class="mobile-account" aria-label="Tu cuenta">
+                <a class="mobile-account-profile" href="{{ route('profile.edit') }}">
+                    @if (auth()->user()->hasMedia('profile-photo'))
+                        <img class="topbar-avatar" src="{{ auth()->user()->getFirstMedia('profile-photo')?->getAvailableUrl(['optimized']) }}" alt="">
+                    @else
+                        <span class="topbar-avatar topbar-avatar-fallback" aria-hidden="true">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
+                    @endif
+                    <span><strong>{{ auth()->user()->name }}</strong><small>Ver mi perfil</small></span>
+                </a>
+                <div class="mobile-account-controls">
+                    <form method="POST" action="{{ route('locale.update') }}">
+                        @csrf
+                        <select name="locale" aria-label="{{ __('ui.language') }}" onchange="this.form.submit()" data-no-select2>
+                            <option value="es" @selected(app()->getLocale() === 'es')>{{ __('ui.spanish') }}</option>
+                            <option value="en" @selected(app()->getLocale() === 'en')>{{ __('ui.english') }}</option>
+                        </select>
+                    </form>
+                    <span class="theme-choices" role="group" aria-label="{{ __('ui.theme') }}">
+                        <button type="button" data-theme-choice="light" aria-label="{{ __('ui.light') }}">☀</button>
+                        <button type="button" data-theme-choice="dark" aria-label="{{ __('ui.dark') }}">☾</button>
+                    </span>
+                    <form method="POST" action="{{ route('logout') }}" data-logout-form>
+                        @csrf
+                        <button class="mobile-account-logout" type="submit">Cerrar sesión</button>
+                    </form>
+                </div>
+            </div>
             <nav class="main-nav" aria-label="Navegación principal">
                 <div class="nav-group">
                 <div class="nav-label">Operación</div>
@@ -271,5 +298,6 @@
             </main>
         </div>
     </div>
+    <x-assistant />
 </body>
 </html>

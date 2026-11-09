@@ -127,6 +127,15 @@ class RoleController extends Controller
                 'integer',
                 'distinct',
                 Rule::exists('permissions', 'id')->where('guard_name', 'web'),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $actor = auth()->user();
+
+                    // Nobody except the super administrator may grant a permission they do not hold.
+                    if ($actor && ! $actor->hasRole(AccessControl::SUPER_ADMIN_ROLE)
+                        && ! $actor->getAllPermissions()->contains('id', (int) $value)) {
+                        $fail('No puedes otorgar un permiso que tu usuario no tiene.');
+                    }
+                },
             ],
         ];
     }

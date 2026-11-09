@@ -12,13 +12,13 @@
     </div>
 
     <form class="filter-bar" method="GET" action="{{ route('admin.activity-log.index') }}">
-        <select class="filter-control" name="user_id" data-select2 data-placeholder="Todos los usuarios">
+        <select class="filter-control" name="user_id" data-searchable-select data-placeholder="Todos los usuarios">
             <option value="">Todos los usuarios</option>
             @foreach ($users as $user)
                 <option value="{{ $user->id }}" @selected((string) ($filters['user_id'] ?? '') === (string) $user->id)>{{ $user->name }}</option>
             @endforeach
         </select>
-        <select class="filter-control" name="module" data-select2 data-placeholder="Todos los módulos">
+        <select class="filter-control" name="module" data-searchable-select data-placeholder="Todos los módulos">
             <option value="">Todos los módulos</option>
             @foreach (['animals' => 'Animales', 'animal-movements' => 'Movimientos', 'farms' => 'Fincas', 'paddocks' => 'Potreros', 'reproduction' => 'Reproducción', 'milk-production' => 'Producción de leche', 'finance' => 'Finanzas', 'users' => 'Usuarios', 'authentication' => 'Autenticación', 'backups' => 'Respaldos'] as $module => $label)
                 <option value="{{ $module }}" @selected(($filters['module'] ?? '') === $module)>{{ $label }}</option>

@@ -37,7 +37,7 @@
                     </div>
                     <div class="field">
                         <label for="species">Especie *</label>
-                        <select class="control" id="species" name="species" data-species-select data-select2 data-placeholder="Seleccionar especie" required>
+                        <select class="control" id="species" name="species" data-species-select data-searchable-select data-placeholder="Seleccionar especie" required>
                             <option value="">Seleccionar especie</option>
                             @foreach ($speciesOptions as $value => $label)
                                 <option value="{{ $value }}" @selected(old('species', $animal->species ?? 'bovine') === $value)>{{ $label }}</option>
@@ -47,7 +47,7 @@
                     </div>
                     <div class="field">
                         <label for="breed_id">Raza</label>
-                        <select class="control" id="breed_id" name="breed_id" data-species-options data-select2 data-placeholder="Buscar raza">
+                        <select class="control" id="breed_id" name="breed_id" data-species-options data-searchable-select data-placeholder="Buscar raza">
                             <option value="">Sin especificar</option>
                             @foreach ($breeds as $breed)
                                 <option value="{{ $breed->id }}" data-species="{{ $breed->species }}" @selected((string) old('breed_id', $animal->breed_id ?? '') === (string) $breed->id)>{{ $breed->name }} · {{ $speciesOptions[$breed->species] ?? 'Otro' }}</option>
@@ -94,7 +94,7 @@
                     </div>
                     <div class="field">
                         <label for="dam_id">Madre</label>
-                        <select class="control" id="dam_id" name="dam_id" data-species-options data-select2 data-placeholder="Buscar madre">
+                        <select class="control" id="dam_id" name="dam_id" data-species-options data-searchable-select data-placeholder="Buscar madre">
                             <option value="">No registrada</option>
                             @foreach ($parentAnimals->where('sex', 'female') as $parent)
                                 <option value="{{ $parent->id }}" data-species="{{ $parent->species }}" @selected((string) old('dam_id', $animal->dam_id ?? '') === (string) $parent->id)>{{ $parent->ear_tag }}{{ $parent->name ? ' · ' . $parent->name : '' }}</option>
@@ -104,7 +104,7 @@
                     </div>
                     <div class="field">
                         <label for="sire_id">Padre</label>
-                        <select class="control" id="sire_id" name="sire_id" data-species-options data-select2 data-placeholder="Buscar padre">
+                        <select class="control" id="sire_id" name="sire_id" data-species-options data-searchable-select data-placeholder="Buscar padre">
                             <option value="">No registrado</option>
                             @foreach ($parentAnimals->where('sex', 'male') as $parent)
                                 <option value="{{ $parent->id }}" data-species="{{ $parent->species }}" @selected((string) old('sire_id', $animal->sire_id ?? '') === (string) $parent->id)>{{ $parent->ear_tag }}{{ $parent->name ? ' · ' . $parent->name : '' }}</option>
@@ -147,7 +147,7 @@
                     </div>
                     <div class="field">
                         <label for="farm_id">Finca</label>
-                        <select class="control" id="farm_id" name="farm_id" data-select2 data-placeholder="Buscar finca">
+                        <select class="control" id="farm_id" name="farm_id" data-searchable-select data-placeholder="Buscar finca">
                             <option value="">Sin finca asignada</option>
                             @foreach ($farms as $farm)
                                 <option value="{{ $farm->id }}" @selected((string) old('farm_id', $animal->farm_id ?? $selectedFarmId ?? '') === (string) $farm->id)>{{ $farm->name }} · {{ $farm->code }}{{ $farm->status === 'inactive' ? ' · Inactiva' : '' }}</option>

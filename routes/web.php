@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AnimalController;
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\AnimalEventController;
 use App\Http\Controllers\AnimalMovementController;
@@ -74,6 +75,7 @@ Route::middleware(['auth', EnsureAccountIsActive::class])->group(function (): vo
     Route::put('notifications/preferences', [NotificationController::class, 'updatePreferences'])->middleware('can:animals.view')->name('notifications.preferences.update');
     Route::post('notifications/push-subscriptions', [NotificationController::class, 'subscribe'])->middleware('can:animals.view')->name('notifications.subscribe');
     Route::delete('notifications/push-subscriptions', [NotificationController::class, 'unsubscribe'])->middleware('can:animals.view')->name('notifications.unsubscribe');
+    Route::post('assistant/ask', [AssistantController::class, 'ask'])->middleware('throttle:30,1')->name('assistant.ask');
     Route::get('offline/status', [OfflineSyncController::class, 'status'])->name('offline.status');
     Route::post('offline/sync', [OfflineSyncController::class, 'sync'])->middleware('throttle:30,1')->name('offline.sync');
 

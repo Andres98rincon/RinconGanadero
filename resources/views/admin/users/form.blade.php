@@ -102,7 +102,7 @@
                 </div>
                 <div class="field">
                     <label for="farm_ids">Fincas *</label>
-                    <select class="control" id="farm_ids" name="farm_ids[]" multiple data-select2 data-placeholder="Seleccionar fincas" required>
+                    <select class="control" id="farm_ids" name="farm_ids[]" multiple data-searchable-select data-placeholder="Seleccionar fincas" required>
                         @foreach ($farms as $farm)
                             <option value="{{ $farm->id }}" @selected(in_array((string) $farm->id, old('farm_ids', array_map('strval', $managedUser?->farms->modelKeys() ?? [])), true))>
                                 {{ $farm->name }} ({{ $farm->code }})
