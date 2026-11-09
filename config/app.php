@@ -69,6 +69,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Schedule Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Zona horaria de las tareas programadas (backups, alertas). Los datos se
+    | siguen guardando en UTC; solo cambia la hora a la que corren las tareas.
+    |
+    */
+
+    'schedule_timezone' => env('SCHEDULE_TIMEZONE', 'America/Bogota'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
