@@ -40,13 +40,11 @@
                         <input class="control" id="address" name="address" value="{{ old('address', $farm->address ?? '') }}" maxlength="255">
                         @error('address')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
-                    @php
-                        $currentProvince = (string) old('province', $farm->province ?? '');
-                        $currentMunicipality = (string) old('municipality', $farm->municipality ?? '');
-                        $currentDepartment = $departments->firstWhere('name', $currentProvince);
-                        $isLegacyProvince = $currentProvince !== '' && ! $currentDepartment;
-                        $isLegacyMunicipality = $currentMunicipality !== '' && ! $currentDepartment?->municipalities->contains('name', $currentMunicipality);
-                    @endphp
+                    @php($currentProvince = (string) old('province', $farm->province ?? ''))
+                    @php($currentMunicipality = (string) old('municipality', $farm->municipality ?? ''))
+                    @php($currentDepartment = $departments->firstWhere('name', $currentProvince))
+                    @php($isLegacyProvince = $currentProvince !== '' && ! $currentDepartment)
+                    @php($isLegacyMunicipality = $currentMunicipality !== '' && ! ($currentDepartment?->municipalities->contains('name', $currentMunicipality) ?? false))
                     <div class="field">
                         <label for="province">Departamento</label>
                         <select class="control" id="province" name="province" data-searchable-select data-placeholder="Selecciona el departamento">
