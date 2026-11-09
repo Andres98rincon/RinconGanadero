@@ -17,6 +17,8 @@ class NotificationController extends Controller
     {
         $preference = NotificationPreference::query()->firstOrCreate(['user_id' => $request->user()->id], ['enabled' => true, 'lead_days' => 1]);
         $notifications = $request->user()->notifications()->latest()->paginate(20);
+        $newCount = $request->user()->unreadNotifications()->count();
+        $totalCount = $request->user()->notifications()->count();
 
         // Se cargan antes de marcarlas: en esta visita las nuevas siguen resaltadas como "Nueva".
         $request->user()->unreadNotifications()->update(['read_at' => now()]);
@@ -25,6 +27,8 @@ class NotificationController extends Controller
             'preference' => $preference,
             'notifications' => $notifications,
             'categories' => LivestockNotificationService::CATEGORIES,
+            'newCount' => $newCount,
+            'totalCount' => $totalCount,
         ]);
     }
 

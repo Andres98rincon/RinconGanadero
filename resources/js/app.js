@@ -283,35 +283,131 @@ window.RinconGanaderoVoice = { initialize: initializeVoiceInputs, supported: Boo
 
 const pushToggle = document.querySelector('[data-push-toggle]');
 const pushStatus = document.querySelector('[data-push-status]');
+const pushLabel = document.querySelector('[data-push-label]');
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-const urlBase64ToUint8Array = (value) => Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_/g, '/')), (char) => char.charCodeAt(0));
+const urlBase64ToUint8Array = (value) => {
+	const base64 = (value + '='.repeat((4 - (value.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
 
-pushToggle?.addEventListener('click', async () => {
-	if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-		if (pushStatus) pushStatus.textContent = 'Este navegador no admite notificaciones PWA.';
-		return;
+	return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+};
+
+const setPushState = (state, message) => {
+	if (!pushToggle) return;
+	const isOn = state === 'on';
+	pushToggle.setAttribute('aria-checked', isOn ? 'true' : 'false');
+	pushToggle.classList.toggle('is-on', isOn);
+	pushToggle.classList.toggle('is-busy', state === 'busy');
+	pushToggle.disabled = state === 'busy' || state === 'unsupported';
+	if (pushLabel) pushLabel.textContent = isOn ? 'Avisos activos en este dispositivo' : 'Activar avisos en este dispositivo';
+	if (pushStatus && message) pushStatus.textContent = message;
+};
+
+const sendPushSubscription = async (method, body) => {
+	const response = await fetch('/notifications/push-subscriptions', {
+		method,
+		headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, Accept: 'application/json' },
+		body: JSON.stringify(body),
+	});
+	if (!response.ok) throw new Error('server');
+};
+
+if (pushToggle) {
+	const pushSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+
+	if (!pushSupported) {
+		setPushState('unsupported', 'Este navegador no admite avisos. En iPhone, primero instala la app en la pantalla de inicio.');
+	} else if (Notification.permission === 'denied') {
+		setPushState('off', 'Bloqueaste los avisos para este sitio. Actívalos desde el candado de la barra de direcciones.');
+	} else {
+		navigator.serviceWorker.ready
+			.then((registration) => registration.pushManager.getSubscription())
+			.then((subscription) => {
+				if (subscription && Notification.permission === 'granted') {
+					setPushState('on', 'Este dispositivo recibirá los recordatorios programados.');
+				}
+			})
+			.catch(() => {});
 	}
-	try {
-		if (Notification.permission !== 'granted') {
-			const permission = await Notification.requestPermission();
-			if (permission !== 'granted') throw new Error('permission-denied');
+
+	pushToggle.addEventListener('click', async () => {
+		const wasOn = pushToggle.getAttribute('aria-checked') === 'true';
+		setPushState('busy');
+
+		try {
+			const registration = await navigator.serviceWorker.ready;
+
+			if (wasOn) {
+				const subscription = await registration.pushManager.getSubscription();
+				if (subscription) {
+					await sendPushSubscription('DELETE', { endpoint: subscription.endpoint }).catch(() => {});
+					await subscription.unsubscribe();
+				}
+				setPushState('off', 'Ya no recibirás avisos en este dispositivo. Los seguirás viendo en esta página.');
+				return;
+			}
+
+			if (Notification.permission !== 'granted') {
+				const permission = await Notification.requestPermission();
+				if (permission !== 'granted') throw new Error('permission-denied');
+			}
+
+			const publicKey = pushToggle.dataset.pushPublicKey;
+			if (!publicKey) {
+				setPushState('off', 'Permiso concedido, pero falta configurar las llaves VAPID en el servidor.');
+				return;
+			}
+
+			const subscription = await registration.pushManager.getSubscription()
+				|| await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+			const payload = subscription.toJSON();
+			await sendPushSubscription('POST', { endpoint: payload.endpoint, keys: payload.keys, contentEncoding: 'aes128gcm' });
+			setPushState('on', '¡Listo! Este dispositivo recibirá los recordatorios programados.');
+		} catch (error) {
+			const message = error.message === 'permission-denied'
+				? 'Permiso denegado. Puedes activarlo desde la configuración del navegador.'
+				: 'No fue posible registrar este dispositivo. Intenta de nuevo.';
+			setPushState(wasOn ? 'on' : 'off', message);
 		}
-		const registration = await navigator.serviceWorker.ready;
-		const publicKey = pushToggle.dataset.pushPublicKey;
-		if (!publicKey) {
-			if (pushStatus) pushStatus.textContent = 'Autorización concedida. El administrador debe configurar la clave VAPID para activar el envío remoto.';
-			pushToggle.textContent = 'Autorización concedida';
-			return;
-		}
-		const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
-		const payload = subscription.toJSON();
-		await fetch('/notifications/push-subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }, body: JSON.stringify({ endpoint: payload.endpoint, keys: payload.keys, contentEncoding: payload.encoding || 'aes128gcm' }) });
-		pushToggle.textContent = 'Notificaciones activadas';
-		if (pushStatus) pushStatus.textContent = 'Este dispositivo recibirá los recordatorios programados.';
-	} catch (error) {
-		if (pushStatus) pushStatus.textContent = error.message === 'permission-denied' ? 'Permiso denegado. Puedes activarlo desde la configuración del navegador.' : 'No fue posible registrar este dispositivo para notificaciones.';
-	}
+	});
+}
+
+const notificationFilterButtons = document.querySelectorAll('[data-nt-filter]');
+notificationFilterButtons.forEach((button) => {
+	button.addEventListener('click', () => {
+		const onlyNew = button.dataset.ntFilter === 'new';
+		notificationFilterButtons.forEach((item) => item.classList.toggle('is-active', item === button));
+		document.querySelectorAll('[data-nt-item]').forEach((item) => {
+			item.hidden = onlyNew && item.dataset.ntNew !== '1';
+		});
+		document.querySelectorAll('[data-nt-group]').forEach((group) => {
+			group.hidden = !group.querySelector('[data-nt-item]:not([hidden])');
+		});
+		const emptyMessage = document.querySelector('[data-nt-filter-empty]');
+		if (emptyMessage) emptyMessage.hidden = Boolean(document.querySelector('[data-nt-item]:not([hidden])'));
+	});
 });
+
+const notificationPreferences = document.querySelector('[data-nt-preferences]');
+if (notificationPreferences) {
+	const master = notificationPreferences.querySelector('[data-nt-master]');
+	const dependent = notificationPreferences.querySelector('[data-nt-dependent]');
+	const categoryInputs = notificationPreferences.querySelectorAll('[data-nt-category]');
+	const noneHint = notificationPreferences.querySelector('[data-nt-none-hint]');
+	const syncPreferences = () => {
+		dependent?.classList.toggle('is-disabled', !master?.checked);
+		if (noneHint) noneHint.hidden = [...categoryInputs].some((input) => input.checked);
+	};
+
+	notificationPreferences.querySelectorAll('[data-nt-select]').forEach((button) => {
+		button.addEventListener('click', () => {
+			categoryInputs.forEach((input) => { input.checked = button.dataset.ntSelect === 'all'; });
+			syncPreferences();
+		});
+	});
+	master?.addEventListener('change', syncPreferences);
+	categoryInputs.forEach((input) => input.addEventListener('change', syncPreferences));
+	syncPreferences();
+}
 
 const scanQrButton = document.querySelector('[data-qr-scan-open]');
 const scanQrPhotoInput = document.querySelector('[data-qr-photo-input]');
