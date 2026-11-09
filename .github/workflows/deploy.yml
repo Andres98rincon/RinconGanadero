@@ -78,8 +78,14 @@ jobs:
             exit 1
           }
 
+      # El build se copia a public_html (lo que sirve el dominio) y a laravel/public, que es
+      # donde Laravel lee manifest.json. Si solo se copiara a uno, las páginas apuntarían a
+      # archivos CSS/JS viejos que ya no existen y la app se vería sin estilos.
+      # Sin --delete: los archivos anteriores se conservan para pestañas abiertas o en caché.
       - name: Subir public/build
-        run: rsync -az --delete public/build/ "hostinger:${{ secrets.PUBLIC_PATH }}/build/"
+        run: |
+          rsync -az public/build/ "hostinger:${{ secrets.PUBLIC_PATH }}/build/"
+          rsync -az public/build/ "hostinger:${{ secrets.DEPLOY_PATH }}/public/build/"
 
       - name: Ejecutar deploy.sh en el servidor
         run: ssh hostinger "cd '${{ secrets.DEPLOY_PATH }}' && git pull --ff-only origin main && bash deploy.sh"
