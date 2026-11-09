@@ -82,4 +82,4 @@ jobs:
         run: rsync -az --delete public/build/ "hostinger:${{ secrets.PUBLIC_PATH }}/build/"
 
       - name: Ejecutar deploy.sh en el servidor
-        run: ssh hostinger "cd '${{ secrets.DEPLOY_PATH }}' && bash deploy.sh"
+        run: ssh hostinger "cd '${{ secrets.DEPLOY_PATH }}' && git pull --ff-only origin main && bash deploy.sh"

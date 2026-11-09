@@ -10,6 +10,35 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# Hostinger usa PHP 8.2 por defecto en la terminal aunque la web use 8.3.
+# Se busca un PHP >= 8.3 y se pone primero en el PATH para php y composer.
+PHP_BIN="${PHP_BIN:-}"
+if [ -z "$PHP_BIN" ]; then
+    for candidate in /opt/alt/php84/usr/bin/php /opt/alt/php83/usr/bin/php /usr/bin/php8.4 /usr/bin/php8.3 "$(command -v php || true)"; do
+        if [ -n "$candidate" ] && [ -x "$candidate" ] && "$candidate" -r 'exit(PHP_VERSION_ID >= 80300 ? 0 : 1);'; then
+            PHP_BIN="$candidate"
+            break
+        fi
+    done
+fi
+if [ -z "$PHP_BIN" ]; then
+    echo "✖ No se encontró PHP 8.3 o superior en el servidor." >&2
+    exit 1
+fi
+mkdir -p "$HOME/.local/deploy-bin"
+ln -sf "$PHP_BIN" "$HOME/.local/deploy-bin/php"
+export PATH="$HOME/.local/deploy-bin:$PATH"
+echo "▶ Usando $(php -r 'echo PHP_VERSION;') ($PHP_BIN)"
+
+COMPOSER_BIN="$(command -v composer || true)"
+run_composer() {
+    if [ -n "$COMPOSER_BIN" ] && head -c 300 "$COMPOSER_BIN" | grep -q 'php'; then
+        php "$COMPOSER_BIN" "$@"
+    else
+        composer "$@"
+    fi
+}
+
 echo "▶ Activando modo mantenimiento"
 php artisan down --retry=15 --refresh=15 || true
 trap 'echo "✖ El despliegue falló. Reabriendo la app."; php artisan up' ERR
@@ -18,7 +47,7 @@ echo "▶ Descargando la última versión de main"
 git pull --ff-only origin main
 
 echo "▶ Instalando dependencias de PHP"
-composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+run_composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 echo "▶ Ejecutando migraciones"
 php artisan migrate --force
