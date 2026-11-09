@@ -12,9 +12,9 @@ class SetLocale
     /** @param Closure(Request): Response $next */
     public function handle(Request $request, Closure $next): Response
     {
-        // Spanish is the product default; English is opt-in from the language selector.
-        $locale = $request->session()->get('locale', 'es');
-        App::setLocale(in_array($locale, ['es', 'en'], true) ? $locale : 'es');
+        // El selector de idioma está desactivado por ahora: la app se muestra siempre en español
+        // aunque un usuario haya elegido inglés antes (no todas las vistas están traducidas).
+        App::setLocale('es');
 
         return $next($request);
     }

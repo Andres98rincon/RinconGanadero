@@ -10,19 +10,17 @@ class LocaleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_change_between_supported_languages(): void
+    public function test_app_stays_in_spanish_while_the_language_selector_is_disabled(): void
     {
         $this->post(route('locale.update'), ['locale' => 'en'])
             ->assertRedirect();
 
         $this->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('<html lang="en">', false)
-            ->assertSee('Language', false)
-            ->assertSee('Dashboard', false)
-            ->assertSee('Your farm, at a glance.', false);
+            ->assertSee('<html lang="es">', false)
+            ->assertDontSee('name="locale"', false);
 
-        $this->assertSame('en', App::getLocale());
+        $this->assertSame('es', App::getLocale());
     }
 
     public function test_unsupported_languages_are_rejected(): void

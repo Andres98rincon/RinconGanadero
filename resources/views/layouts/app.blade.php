@@ -66,13 +66,6 @@
                     <span><strong>{{ auth()->user()->name }}</strong><small>Ver mi perfil</small></span>
                 </a>
                 <div class="mobile-account-controls">
-                    <form method="POST" action="{{ route('locale.update') }}">
-                        @csrf
-                        <select name="locale" aria-label="{{ __('ui.language') }}" onchange="this.form.submit()" data-no-select2>
-                            <option value="es" @selected(app()->getLocale() === 'es')>{{ __('ui.spanish') }}</option>
-                            <option value="en" @selected(app()->getLocale() === 'en')>{{ __('ui.english') }}</option>
-                        </select>
-                    </form>
                     <span class="theme-choices" role="group" aria-label="{{ __('ui.theme') }}">
                         <button type="button" data-theme-choice="light" aria-label="{{ __('ui.light') }}">☀</button>
                         <button type="button" data-theme-choice="dark" aria-label="{{ __('ui.dark') }}">☾</button>
@@ -254,16 +247,6 @@
                         @if ($unreadNotificationsCount > 0)<span class="topbar-bell-count" data-unread-count>{{ $unreadNotificationsCount > 99 ? '99+' : $unreadNotificationsCount }}</span>@endif
                     </a>
                     @endcan
-                    <form method="POST" action="{{ route('locale.update') }}" class="language-control">
-                        @csrf
-                        <label class="theme-control" for="locale-preference">
-                            <span class="visually-hidden">{{ __('ui.language') }}</span>
-                            <select id="locale-preference" name="locale" aria-label="{{ __('ui.language') }}" onchange="this.form.submit()">
-                                <option value="es" @selected(app()->getLocale() === 'es')>{{ __('ui.spanish') }}</option>
-                                <option value="en" @selected(app()->getLocale() === 'en')>{{ __('ui.english') }}</option>
-                            </select>
-                        </label>
-                    </form>
                     <label class="theme-control" for="theme-preference">
                         <span class="visually-hidden">{{ __('ui.theme') }}</span>
                         <span class="theme-choices" role="group" aria-label="{{ __('ui.theme') }}">
