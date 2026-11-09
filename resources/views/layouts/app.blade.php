@@ -100,7 +100,7 @@
                 <div class="nav-group">
                 <div class="nav-label">Fincas y movimientos</div>
                 @can('animals.view')
-                <a class="nav-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}" href="{{ route('notifications.index') }}">🔔 {{ __('ui.menu.notifications') }}</a>
+                <a class="nav-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}" href="{{ route('notifications.index') }}">🔔 {{ __('ui.menu.notifications') }}@if ($unreadNotificationsCount > 0)<span class="nav-badge" aria-label="{{ $unreadNotificationsCount }} sin leer">{{ $unreadNotificationsCount > 99 ? '99+' : $unreadNotificationsCount }}</span>@endif</a>
                 @endcan
                 @can('animals.view')
                 <a class="nav-link {{ request()->routeIs('calendar.*') ? 'active' : '' }}" href="{{ route('calendar.index') }}">
@@ -223,6 +223,7 @@
             <button type="button" class="mobile-tab {{ $isPrimaryMobileRoute ? '' : 'active' }}" data-mobile-menu-toggle aria-controls="app-sidebar" aria-expanded="false">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                 <span>Más</span>
+                @if ($unreadNotificationsCount > 0)<b class="mobile-tab-badge" aria-label="{{ $unreadNotificationsCount }} notificaciones sin leer">{{ $unreadNotificationsCount > 9 ? '9+' : $unreadNotificationsCount }}</b>@endif
             </button>
         </nav>
 
@@ -247,6 +248,12 @@
                             </div>
                         </div>
                     </div>
+                    @can('animals.view')
+                    <a class="topbar-bell {{ $unreadNotificationsCount > 0 ? 'has-unread' : '' }}" href="{{ route('notifications.index') }}" aria-label="{{ $unreadNotificationsCount > 0 ? 'Notificaciones: '.$unreadNotificationsCount.' sin leer' : 'Notificaciones' }}" title="Notificaciones">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                        @if ($unreadNotificationsCount > 0)<span class="topbar-bell-count" data-unread-count>{{ $unreadNotificationsCount > 99 ? '99+' : $unreadNotificationsCount }}</span>@endif
+                    </a>
+                    @endcan
                     <form method="POST" action="{{ route('locale.update') }}" class="language-control">
                         @csrf
                         <label class="theme-control" for="locale-preference">

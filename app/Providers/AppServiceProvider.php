@@ -16,6 +16,7 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -36,6 +37,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::defaultView('vendor.pagination.rincon');
+
+        View::composer('layouts.app', function (\Illuminate\View\View $view): void {
+            $user = auth()->user();
+            $view->with('unreadNotificationsCount', $user instanceof User && $user->can('animals.view')
+                ? $user->unreadNotifications()->count()
+                : 0);
+        });
 
         Gate::before(fn (User $user): ?bool => $user->hasRole('superadministrador') ? true : null);
         Event::listen(Logout::class, function (Logout $event): void {

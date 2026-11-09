@@ -16,9 +16,14 @@ class NotificationController extends Controller
     public function index(Request $request): View
     {
         $preference = NotificationPreference::query()->firstOrCreate(['user_id' => $request->user()->id], ['enabled' => true, 'lead_days' => 1]);
+        $notifications = $request->user()->notifications()->latest()->paginate(20);
+
+        // Se cargan antes de marcarlas: en esta visita las nuevas siguen resaltadas como "Nueva".
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
         return view('notifications.index', [
             'preference' => $preference,
-            'notifications' => $request->user()->notifications()->latest()->paginate(20),
+            'notifications' => $notifications,
             'categories' => LivestockNotificationService::CATEGORIES,
         ]);
     }

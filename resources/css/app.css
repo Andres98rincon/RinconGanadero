@@ -1275,12 +1275,48 @@ html[data-theme="dark"] .data-table tbody tr:hover td { background: #1d3028; }
     .mobile-account-profile .topbar-avatar { width: 40px; height: 40px; }
     .mobile-account-profile strong { display: block; font-size: 14px; }
     .mobile-account-profile small { display: block; color: #b9cdc1; font-size: 11px; }
-    .mobile-account-controls { display: flex; align-items: center; gap: 8px; }
+    .mobile-account-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+    .mobile-account-controls > form:first-child { flex: 1 1 auto; min-width: 0; }
+    .mobile-account-controls > form:first-child select { width: 100%; }
     .mobile-account-controls select { height: 36px; padding: 0 8px; border: 1px solid rgb(255 255 255 / 18%); border-radius: 9px; background: rgb(255 255 255 / 8%); color: #fff; font: inherit; font-size: 13px; }
     .mobile-account-controls select option { color: #1d2b24; }
     .mobile-account-controls .theme-choices { display: inline-flex; gap: 4px; }
     .mobile-account-controls .theme-choices button { width: 36px; height: 36px; border: 1px solid rgb(255 255 255 / 18%); border-radius: 9px; background: rgb(255 255 255 / 8%); color: #fff; cursor: pointer; }
     .mobile-account-controls .theme-choices button.is-selected { border-color: #edb979; background: rgb(237 185 121 / 20%); }
-    .mobile-account-controls form[data-logout-form] { margin-left: auto; }
-    .mobile-account-logout { height: 36px; padding: 0 12px; white-space: nowrap; border: 1px solid rgb(240 170 160 / 45%); border-radius: 9px; background: rgb(196 91 78 / 18%); color: #ffd9d3; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+    .mobile-account-controls form[data-logout-form] { flex: 1 1 100%; margin: 0; }
+    .mobile-account-logout { width: 100%; height: 38px; padding: 0 12px; white-space: nowrap; border: 1px solid rgb(240 170 160 / 45%); border-radius: 9px; background: rgb(196 91 78 / 18%); color: #ffd9d3; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+}
+
+/* Contador de notificaciones sin leer y botón de cerrar sesión dentro de su contenedor */
+.topbar-account { min-width: 0; }
+.topbar-account form[data-logout-form] .button { white-space: nowrap; }
+.topbar-bell { position: relative; display: inline-grid; flex: 0 0 auto; width: 38px; height: 38px; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+.topbar-bell:hover { border-color: #b9c9bd; transform: translateY(-1px); }
+.topbar-bell:focus-visible { outline: 2px solid #edb979; outline-offset: 2px; }
+.topbar-bell svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.topbar-bell.has-unread svg { transform-origin: 50% 10%; animation: bell-ring 2.4s ease-in-out 1s 2; }
+.topbar-bell-count, .nav-badge, .mobile-tab-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; padding: 0 5px; border-radius: 999px; background: #c4473a; color: #fff; font-size: 10.5px; font-style: normal; font-weight: 800; line-height: 1; }
+.topbar-bell-count { position: absolute; top: -6px; right: -7px; box-shadow: 0 0 0 2px var(--paper); }
+.nav-badge { margin-left: auto; }
+.notification-history tr.is-unread td { background: rgb(237 185 121 / 12%); }
+.notification-history tr.is-unread td:first-child { box-shadow: inset 3px 0 0 #edb979; }
+.notification-state { display: inline-flex; padding: 3px 9px; border-radius: 999px; background: rgb(102 116 107 / 12%); color: #66746b; font-size: 11.5px; font-weight: 700; }
+.notification-state.is-new { background: #c4473a; color: #fff; }
+@keyframes bell-ring { 0%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(14deg); } 20%, 40% { transform: rotate(-12deg); } 50% { transform: rotate(0); } }
+@media (max-width: 760px) {
+    .topbar-bell { order: 1; width: 36px; height: 36px; }
+    .mobile-tab-badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 17px; height: 17px; font-size: 10px; box-shadow: 0 0 0 2px #1d3027; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .topbar-bell.has-unread svg { animation: none; }
+}
+@media (min-width: 761px) and (max-width: 1240px) {
+    .topbar { gap: 14px; }
+    .topbar-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .topbar-account { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+    .topbar-profile .topbar-status { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+@media (min-width: 761px) and (max-width: 1040px) {
+    .topbar-title { display: none; }
+    .topbar { justify-content: flex-end; }
 }
