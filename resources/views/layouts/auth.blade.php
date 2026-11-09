@@ -200,7 +200,7 @@
                     <img src="{{ asset('images/rincon-ganadero.png') }}" alt="Logo de Rincón Ganadero">
                     <span>
                         <strong>RINCÓN GANADERO</strong>
-                        <small>Gestión ganadera inteligente</small>
+                        <small>Gestión ganadera inteligente.</small>
                     </span>
                 </a>
 
