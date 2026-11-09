@@ -194,7 +194,7 @@
 
         <div class="ga-card">
             <section class="ga-visual" aria-label="Rincón Ganadero">
-                <img class="ga-visual-img" src="{{ asset('images/domino.jpeg') }}" alt="" fetchpriority="high">
+                <img class="ga-visual-img" src="{{ asset('images/Domino.jpeg') }}" alt="" fetchpriority="high">
 
                 <a class="ga-brand" href="{{ route('login') }}">
                     <img src="{{ asset('images/rincon-ganadero.png') }}" alt="Logo de Rincón Ganadero">
