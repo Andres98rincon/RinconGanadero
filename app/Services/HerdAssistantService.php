@@ -271,7 +271,7 @@ class HerdAssistantService
         [$from, $to, $periodLabel] = $this->detectPeriod('this_month');
         $farm = $this->detectFarm();
         $query = MilkProductionRecord::query()
-            ->whereBetween('record_date', [$from->toDateString(), $to->toDateString()])
+            ->whereBetween('record_date', $this->dateRange($from, $to))
             ->when($animal, fn (Builder $query) => $query->where('animal_id', $animal->id))
             ->when($farm, fn (Builder $query) => $query->whereHas('animal', fn (Builder $animals) => $animals->where('farm_id', $farm->id)));
 
@@ -307,7 +307,7 @@ class HerdAssistantService
         $farm = $this->detectFarm();
         $lowest = $this->containsAny(['menos leche', 'menos produce', 'peor']);
         $rows = MilkProductionRecord::query()
-            ->whereBetween('record_date', [$from->toDateString(), $to->toDateString()])
+            ->whereBetween('record_date', $this->dateRange($from, $to))
             ->when($farm, fn (Builder $query) => $query->whereHas('animal', fn (Builder $animals) => $animals->where('farm_id', $farm->id)))
             ->toBase()
             ->selectRaw('animal_id, SUM(total_liters) as liters')
@@ -417,7 +417,7 @@ class HerdAssistantService
         [$from, $to, $periodLabel] = $this->detectPeriod('next_30_days');
         $from = $from->lessThan($this->today) && ! $this->containsAny(['pasad', 'anterior', 'ayer']) ? $this->today : $from;
         $animals = $this->animalQuery($this->detectFarm(), 'active', 'female', null, null)
-            ->whereBetween('expected_calving_date', [$from->toDateString(), $to->toDateString()])
+            ->whereBetween('expected_calving_date', $this->dateRange($from, $to))
             ->orderBy('expected_calving_date')
             ->limit(10)
             ->get(['id', 'ear_tag', 'name', 'expected_calving_date']);
@@ -438,7 +438,7 @@ class HerdAssistantService
     {
         [$from, $to, $periodLabel] = $this->detectPeriod('this_month');
         $query = $this->animalQuery($this->detectFarm(), null, $this->detectSex(), $this->detectSpecies(), null)
-            ->whereBetween('birth_date', [$from->toDateString(), $to->toDateString()]);
+            ->whereBetween('birth_date', $this->dateRange($from, $to));
         $total = (clone $query)->count();
         $females = (clone $query)->where('sex', 'female')->count();
 
@@ -468,7 +468,7 @@ class HerdAssistantService
         [$from, $to, $periodLabel] = $this->detectPeriod('this_month');
         $farm = $this->detectFarm();
         $query = FinancialTransaction::query()
-            ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()])
+            ->whereBetween('transaction_date', $this->dateRange($from, $to))
             ->when($farm, fn (Builder $query) => $query->where('farm_id', $farm->id));
         $totals = (clone $query)->toBase()->selectRaw("COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as income, COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses")->first();
         $income = (float) $totals->income;
@@ -503,13 +503,13 @@ class HerdAssistantService
         $to = $this->today->addDays(14);
         $events = collect();
 
-        CalendarReminder::query()->with('animal:id,ear_tag,name')->whereBetween('event_date', [$this->today->toDateString(), $to->toDateString()])->orderBy('event_date')->limit(10)->get()
+        CalendarReminder::query()->with('animal:id,ear_tag,name')->whereBetween('event_date', $this->dateRange($this->today, $to))->orderBy('event_date')->limit(10)->get()
             ->each(fn (CalendarReminder $reminder) => $events->push(['date' => $reminder->event_date, 'label' => $reminder->title.($reminder->animal ? ' · '.$this->animalName($reminder->animal) : '')]));
-        AnimalEvent::query()->with('animal:id,ear_tag,name')->whereBetween('due_date', [$this->today->toDateString(), $to->toDateString()])->orderBy('due_date')->limit(10)->get()
+        AnimalEvent::query()->with('animal:id,ear_tag,name')->whereBetween('due_date', $this->dateRange($this->today, $to))->orderBy('due_date')->limit(10)->get()
             ->each(fn (AnimalEvent $event) => $events->push(['date' => $event->due_date, 'label' => $event->title.' · '.$this->animalName($event->animal)]));
 
         if ($this->user->can('reproduction.view')) {
-            Animal::query()->where('status', 'active')->whereBetween('expected_calving_date', [$this->today->toDateString(), $to->toDateString()])->limit(10)->get(['id', 'ear_tag', 'name', 'expected_calving_date'])
+            Animal::query()->where('status', 'active')->whereBetween('expected_calving_date', $this->dateRange($this->today, $to))->limit(10)->get(['id', 'ear_tag', 'name', 'expected_calving_date'])
                 ->each(fn (Animal $animal) => $events->push(['date' => $animal->expected_calving_date, 'label' => 'Parto probable · '.$this->animalName($animal)]));
         }
 
@@ -530,7 +530,7 @@ class HerdAssistantService
     private function movements(): array
     {
         [$from, $to, $periodLabel] = $this->detectPeriod('this_month');
-        $rows = AnimalMovement::query()->whereBetween('movement_date', [$from->toDateString(), $to->toDateString()])->toBase()
+        $rows = AnimalMovement::query()->whereBetween('movement_date', $this->dateRange($from, $to))->toBase()
             ->selectRaw('movement_type, COUNT(*) as total, COALESCE(SUM(amount), 0) as amount')->groupBy('movement_type')->get()->keyBy('movement_type');
         $purchases = $rows['purchase'] ?? null;
         $sales = $rows['sale'] ?? null;
@@ -759,6 +759,16 @@ class HerdAssistantService
     private function reproductiveLabel(?string $status): string
     {
         return ['pregnant' => 'Preñadas / preñada', 'served' => 'Servidas (esperando diagnóstico)', 'lactating' => 'Recién paridas / lactando', 'open' => 'Vacías'][$status] ?? 'Sin registro';
+    }
+
+    /**
+     * Rango de fechas que incluye el último día completo, aunque la columna guarde hora.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function dateRange(CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        return [$from->toDateString(), $to->toDateString().' 23:59:59'];
     }
 
     private function normalize(string $text): string

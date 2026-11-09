@@ -17,6 +17,8 @@ class SuperAdminSeederTest extends TestCase
 
     public function test_seeder_creates_the_configured_super_administrator(): void
     {
+        Config::set('services.super_admin.name', 'Andrés');
+        Config::set('services.super_admin.email', 'andresatm21@gmail.com');
         Config::set('services.super_admin.password', 'A-strong-test-Password-2026!');
 
         (new SuperAdminSeeder)->run();
@@ -50,6 +52,8 @@ class SuperAdminSeederTest extends TestCase
 
     public function test_reseeding_an_existing_account_does_not_replace_its_password(): void
     {
+        Config::set('services.super_admin.name', 'Andrés');
+        Config::set('services.super_admin.email', 'andresatm21@gmail.com');
         Config::set('services.super_admin.password', 'A-strong-test-Password-2026!');
 
         $user = User::factory()->create([
