@@ -53,7 +53,7 @@ class AnimalValuationController extends Controller
                 ->get(['id', 'ear_tag', 'name', 'farm_id']);
         }
 
-        $animalIds = $animals->modelKeys();
+        $animalIds = $animals->pluck('id')->all();
         $latestValuations = AnimalValuation::query()
             ->whereIn('animal_id', $animalIds)
             ->whereDate('valuation_date', '<=', today())
